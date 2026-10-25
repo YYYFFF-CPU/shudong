@@ -466,6 +466,60 @@
   }
   .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
   footer { text-align: center; color: #c4ab97; font-size: 12px; padding: 50px 0 10px; letter-spacing: 1px; }
+
+  /* ---------- 账号系统 ---------- */
+  .account-chip {
+    display: inline-flex; align-items: center; gap: 4px; margin-top: 14px;
+    padding: 7px 16px; border-radius: 999px; background: #fff;
+    border: 2px solid var(--card-border); color: var(--text-dim);
+    font-size: 13px; cursor: pointer; font-family: inherit; box-shadow: var(--shadow);
+    transition: all 0.2s;
+  }
+  .account-chip:hover { color: var(--coral-deep); border-color: var(--coral); }
+  .account-chip.logged { color: #6e5138; }
+  .auth-mask {
+    position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center;
+    background: rgba(90, 60, 40, 0.38); padding: 20px;
+    animation: fadein 0.25s ease;
+  }
+  .auth-card {
+    position: relative; width: 100%; max-width: 380px; max-height: 86vh; overflow-y: auto;
+    background: #fffdf8; border: 2px solid var(--card-border); border-radius: 22px;
+    padding: 26px 24px; box-shadow: 0 16px 50px rgba(150, 90, 60, 0.3);
+    animation: popin 0.25s ease;
+  }
+  @keyframes popin { from { transform: scale(0.94); opacity: 0; } to { transform: none; opacity: 1; } }
+  .auth-card h3 { font-size: 18px; color: #6e5138; margin-bottom: 6px; }
+  .auth-tip { font-size: 12.5px; color: #a6907f; line-height: 1.8; margin-bottom: 14px; }
+  .auth-card label { display: block; font-size: 12.5px; color: #a6907f; margin: 10px 0 4px; }
+  .auth-card input {
+    width: 100%; padding: 10px 12px; border: 2px solid #ffe0cd; border-radius: 12px;
+    font-size: 14px; color: #5c4a3d; outline: none; font-family: inherit; background: #fff;
+  }
+  .auth-card input:focus { border-color: var(--coral); }
+  .auth-actions { display: flex; gap: 8px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
+  .auth-err { color: #e0805f; font-size: 12.5px; margin-top: 10px; min-height: 16px; line-height: 1.6; }
+  .auth-close {
+    position: absolute; top: 12px; right: 14px; background: none; border: none;
+    font-size: 16px; color: #c4ab97; cursor: pointer; padding: 4px;
+  }
+  .anon-toggle {
+    display: inline-flex; align-items: center; gap: 6px; margin-top: 12px;
+    font-size: 13px; color: var(--text-dim); cursor: pointer; user-select: none;
+  }
+  .anon-toggle input { accent-color: var(--coral); width: 15px; height: 15px; }
+
+  /* ---------- 管理面板 ---------- */
+  .admin-stats {
+    text-align: center; font-size: 13px; color: #a6907f; margin: 14px 0 4px;
+    padding: 10px; border-radius: 14px; background: #fff; border: 2px dashed #ffd2bb;
+  }
+  .adm-del {
+    background: none; border: none; color: #d98a7a; font-size: 12px;
+    cursor: pointer; font-family: inherit; padding: 4px 6px; white-space: nowrap;
+  }
+  .adm-del:hover { color: #e0805f; }
+  .adm-reply-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
   @media (max-width: 480px) {
     .logo { font-size: 34px; letter-spacing: 10px; text-indent: 10px; }
     nav button { font-size: 13.5px; padding: 10px 0; }
@@ -501,12 +555,14 @@
   <header>
     <div class="logo">树 洞</div>
     <div class="tagline">一个暖暖的小树洞 · 你来了呀</div>
+    <button class="account-chip" id="accountChip">🌿 游客（点此登录）</button>
   </header>
 
   <nav>
     <button data-view="write" class="on">🌷 倾诉</button>
     <button data-view="mine">我的树洞<span class="badge" id="mineBadge">0</span></button>
     <button data-view="others">旅人的心事</button>
+    <button data-view="admin" id="adminTab" style="display:none">⚙️ 管理</button>
   </nav>
 
   <!-- ============ 倾诉 ============ -->
@@ -534,6 +590,7 @@
       <button class="btn" id="send">说给树洞听 🌷</button>
       <button class="btn btn-ghost" id="keep">放进树洞收藏 🌙</button>
     </div>
+    <label class="anon-toggle" id="anonToggle" style="display:none"><input type="checkbox" id="anonPost" checked> 🕶 匿名发布（不勾选则带上你的昵称）</label>
 
     <div class="care">
       <b>小小的提醒：</b>树洞会一直陪着你，但它不能代替专业帮助。如果你此刻非常难受，或出现了伤害自己的念头，请一定告诉身边可信的人，或拨打<b>全国心理援助热线 12356</b>（24 小时免费）。这个世界上，有很多真实的人希望你好好活着。
@@ -555,7 +612,43 @@
     </div>
   </section>
 
-  <footer>树洞 · 愿你被这个世界温柔以待 <span style="opacity:0.45;font-size:10px">v2.2</span></footer>
+  <!-- ============ 管理（仅站长可见） ============ -->
+  <section class="view" id="view-admin">
+    <div class="list-title">— 树洞小管家 —</div>
+    <div class="admin-stats" id="adminStats">正在整理……</div>
+    <div id="adminList"></div>
+  </section>
+
+  <footer>树洞 · 愿你被这个世界温柔以待 <span style="opacity:0.45;font-size:10px">v3.0</span></footer>
+</div>
+
+<!-- 账号弹窗 -->
+<div class="auth-mask" id="authMask" style="display:none">
+  <div class="auth-card">
+    <button class="auth-close" id="authClose">✕</button>
+    <div id="authForm">
+      <h3>来到树洞的小屋 🌿</h3>
+      <p class="auth-tip">登录后：心事可在多设备管理、可选择带昵称发布。<br>不登录也完全可以用，一样默默匿名。心事的内容永远只有树洞知道。</p>
+      <label>昵称（注册时填写）<input id="regNick" maxlength="12" placeholder="想被怎么称呼呀"></label>
+      <label>邮箱<input id="regEmail" type="email" placeholder="用于登录"></label>
+      <label>密码（至少 6 位）<input id="regPass" type="password" placeholder="••••••"></label>
+      <div class="auth-actions">
+        <button class="btn" id="btnLogin">登录</button>
+        <button class="btn btn-ghost" id="btnSignup">注册</button>
+      </div>
+      <p class="auth-err" id="authErr"></p>
+    </div>
+    <div id="authInfo" style="display:none">
+      <h3 id="whoTitle"></h3>
+      <p class="auth-tip" id="whoEmail"></p>
+      <label>改昵称<input id="editNick" maxlength="12"></label>
+      <div class="auth-actions"><button class="btn btn-ghost" id="btnSaveNick">保存昵称</button></div>
+      <label>改密码<input id="newPass" type="password" placeholder="新密码（至少 6 位）"></label>
+      <div class="auth-actions"><button class="btn btn-ghost" id="btnSavePass">更新密码</button></div>
+      <div class="auth-actions"><button class="btn btn-ghost" id="btnLogout">退出登录</button></div>
+      <p class="auth-err" id="authErr2"></p>
+    </div>
+  </div>
 </div>
 
 <!-- 小团子吉祥物 -->
@@ -699,6 +792,184 @@ function genSecret() {
   for (let i = 0; i < 32; i++) s += Math.floor(Math.random() * 16).toString(16);
   return s;
 }
+
+/* ---------- 账号系统（Supabase Auth） ---------- */
+const LS_AUTH = "shudong_auth_v1";
+const getAuth = () => JSON.parse(localStorage.getItem(LS_AUTH) || "null");
+const saveAuth = (a) => localStorage.setItem(LS_AUTH, JSON.stringify(a));
+const clearAuthLS = () => localStorage.removeItem(LS_AUTH);
+const authState = { user: null, admin: false, myIds: [] };
+
+function jwtExp(token) {
+  try {
+    const p = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    return JSON.parse(atob(p)).exp * 1000;
+  } catch { return 0; }
+}
+/* access_token 一小时过期，自动用 refresh_token 续期 */
+async function ensureToken() {
+  const a = getAuth();
+  if (!a) return false;
+  if (Date.now() < (a.expires_at || 0) - 60000) return true;
+  try {
+    const res = await fetch(`${SHARED.url}/auth/v1/token?grant_type=refresh_token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: SHARED.key },
+      body: JSON.stringify({ refresh_token: a.refresh_token }),
+    });
+    const j = await res.json();
+    if (!j.access_token) throw 0;
+    saveAuth({ ...a, access_token: j.access_token, refresh_token: j.refresh_token || a.refresh_token, expires_at: jwtExp(j.access_token) || Date.now() + 3000000 });
+    return true;
+  } catch { clearAuthLS(); return false; }
+}
+/* 带用户身份的请求 */
+async function authedApi(path, opts = {}) {
+  if (!(await ensureToken())) throw new Error("登录已过期，请重新登录");
+  const a = getAuth();
+  return fetch(`${SHARED.url}${path}`, {
+    ...opts,
+    headers: { "Content-Type": "application/json", apikey: SHARED.key, Authorization: "Bearer " + a.access_token, ...(opts.headers || {}) },
+  });
+}
+function friendlyAuthErr(msg) {
+  if (/Invalid login/i.test(msg)) return "邮箱或密码不对哦";
+  if (/already registered/i.test(msg)) return "这个邮箱已注册过，直接登录试试";
+  if (/at least 6/i.test(msg)) return "密码至少 6 位";
+  if (/not confirmed/i.test(msg)) return "请先去邮箱点验证链接";
+  if (/Signup requires/i.test(msg)) return "请填写完整哦";
+  return msg || "出了点小问题，再试一次";
+}
+function openAuth() {
+  const a = getAuth();
+  $("#authForm").style.display = a ? "none" : "block";
+  $("#authInfo").style.display = a ? "block" : "none";
+  if (a) {
+    $("#whoTitle").textContent = "🌿 " + (a.user.nickname || "旅人");
+    $("#whoEmail").textContent = a.user.email + (authState.admin ? " · 站长" : "");
+    $("#editNick").value = a.user.nickname || "";
+    $("#newPass").value = "";
+  } else {
+    $("#authErr").textContent = "";
+  }
+  $("#authMask").style.display = "flex";
+}
+function closeAuth() { $("#authMask").style.display = "none"; }
+function authErr(msg) { $("#authErr").textContent = msg; $("#authErr2").textContent = msg; }
+
+async function afterAuthChange() {
+  const a = getAuth();
+  authState.user = a ? a.user : null;
+  authState.admin = false;
+  authState.myIds = [];
+  if (a && (await ensureToken())) {
+    try {
+      const r = await authedApi("/rest/v1/rpc/is_admin", { method: "POST", body: "{}" });
+      authState.admin = (await r.json()) === true;
+    } catch {}
+    try {
+      const r2 = await authedApi("/rest/v1/rpc/my_whisper_ids", { method: "POST", body: "{}" });
+      const ids = await r2.json();
+      authState.myIds = Array.isArray(ids) ? ids.map(Number) : [];
+    } catch {}
+  }
+  const chip = $("#accountChip");
+  chip.textContent = authState.user ? "🌿 " + (authState.user.nickname || "旅人") : "🌿 游客（点此登录）";
+  chip.classList.toggle("logged", !!authState.user);
+  $("#anonToggle").style.display = authState.user ? "inline-flex" : "none";
+  $("#adminTab").style.display = authState.admin ? "" : "none";
+  if (document.querySelector("#view-others.on")) renderOthers();
+}
+function saveSession(j, email, nickname) {
+  saveAuth({
+    access_token: j.access_token,
+    refresh_token: j.refresh_token,
+    expires_at: jwtExp(j.access_token) || Date.now() + 3000000,
+    user: { id: j.user.id, email: email || j.user.email, nickname: nickname || (j.user.user_metadata && j.user.user_metadata.nickname) || "旅人" },
+  });
+}
+$("#accountChip").addEventListener("click", openAuth);
+$("#authClose").addEventListener("click", closeAuth);
+$("#authMask").addEventListener("click", (e) => { if (e.target === $("#authMask")) closeAuth(); });
+
+$("#btnSignup").addEventListener("click", async () => {
+  const nickname = $("#regNick").value.trim() || "旅人";
+  const email = $("#regEmail").value.trim();
+  const password = $("#regPass").value;
+  if (!email || !email.includes("@")) { authErr("请填写正确的邮箱"); return; }
+  if (password.length < 6) { authErr("密码至少 6 位"); return; }
+  try {
+    const res = await fetch(`${SHARED.url}/auth/v1/signup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: SHARED.key },
+      body: JSON.stringify({ email, password, data: { nickname } }),
+    });
+    const j = await res.json();
+    if (!res.ok) throw new Error(j.msg || j.message || ("HTTP " + res.status));
+    if (j.access_token) {
+      saveSession(j, email, nickname);
+      closeAuth();
+      toast("欢迎来到树洞，" + nickname + " 🌿");
+      await afterAuthChange();
+    } else {
+      authErr("注册成功！去邮箱点一下验证链接就可以登录啦");
+    }
+  } catch (e) { authErr(friendlyAuthErr(e.message)); }
+});
+
+$("#btnLogin").addEventListener("click", async () => {
+  const email = $("#regEmail").value.trim();
+  const password = $("#regPass").value;
+  if (!email || !password) { authErr("请填写邮箱和密码"); return; }
+  try {
+    const res = await fetch(`${SHARED.url}/auth/v1/token?grant_type=password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: SHARED.key },
+      body: JSON.stringify({ email, password }),
+    });
+    const j = await res.json();
+    if (!res.ok) throw new Error(j.msg || j.message || ("HTTP " + res.status));
+    saveSession(j, email);
+    closeAuth();
+    toast("回来啦，" + (getAuth().user.nickname || "旅人") + " 🌿");
+    await afterAuthChange();
+  } catch (e) { authErr(friendlyAuthErr(e.message)); }
+});
+
+$("#btnSaveNick").addEventListener("click", async () => {
+  const nickname = $("#editNick").value.trim();
+  if (!nickname) { authErr("昵称不能为空"); return; }
+  try {
+    const res = await authedApi("/auth/v1/user", { method: "PUT", body: JSON.stringify({ data: { nickname } }) });
+    const j = await res.json();
+    if (!res.ok) throw new Error(j.message || "HTTP " + res.status);
+    const a = getAuth();
+    a.user.nickname = nickname;
+    saveAuth(a);
+    toast("改好啦，以后带名字发布就是「" + nickname + "」✨");
+    await afterAuthChange();
+    openAuth();
+  } catch (e) { authErr(friendlyAuthErr(e.message)); }
+});
+
+$("#btnSavePass").addEventListener("click", async () => {
+  const newPass = $("#newPass").value;
+  if (newPass.length < 6) { authErr("新密码至少 6 位"); return; }
+  try {
+    const res = await authedApi("/auth/v1/user", { method: "PUT", body: JSON.stringify({ new_password: newPass }) });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    $("#newPass").value = "";
+    authErr("密码已更新 ✅");
+  } catch (e) { authErr(friendlyAuthErr(e.message)); }
+});
+
+$("#btnLogout").addEventListener("click", async () => {
+  try { await authedApi("/auth/v1/logout", { method: "POST" }); } catch {}
+  clearAuthLS();
+  closeAuth();
+  toast("下次再来，我一直在这儿 🌿");
+  await afterAuthChange();
+});
 
 /* ---------- 背景：云朵与小心心 ---------- */
 (function paintSky() {
@@ -901,6 +1172,7 @@ document.querySelectorAll("nav button").forEach((btn) => {
     $("#view-" + btn.dataset.view).classList.add("on");
     if (btn.dataset.view === "mine") renderMine();
     if (btn.dataset.view === "others") renderOthers();
+    if (btn.dataset.view === "admin") renderAdmin();
   });
 });
 
@@ -1072,18 +1344,26 @@ $("#keep").addEventListener("click", async () => {
   if (!text) { toast("先写点什么，再放进树洞吧 🌙"); input.focus(); return; }
   if (!confirm("放进树洞的心事会匿名出现在「旅人的心事」里，让路过的旅人看到、也能送你温暖。\n\n确定放进去吗？（只想自己收着的话，点「取消」——聊过的话都默默存在你自己的浏览器里）")) return;
 
-  /* 生成发布凭证：以后凭它修改/删除这条心事 */
+  /* 生成发布凭证：以后凭它修改/删除这条心事（未登录设备的管理方式） */
   const secret = genSecret();
+  /* 匿名开关：勾选=纯匿名（与账号无关）；不勾=带上昵称和账号身份（可跨设备管理） */
+  const wantName = authState.user && !$("#anonPost").checked;
   let cloudOk = false;
   if (isShared()) {
     try {
+      let headers = { "Content-Type": "application/json", apikey: SHARED.key, Authorization: "Bearer " + SHARED.key, Prefer: "return=representation" };
+      const body = { content: text, reply: "", owner_secret: secret, created_at: new Date().toISOString() };
+      if (wantName && (await ensureToken())) {
+        headers = { ...headers, Authorization: "Bearer " + getAuth().access_token };
+        body.author_name = authState.user.nickname || "旅人";
+      }
       const ctrl = new AbortController();
       const tm = setTimeout(() => ctrl.abort(), 10000);
       const res = await fetch(`${SHARED.url}/rest/v1/${SHARED.table}?select=id`, {
         method: "POST",
         signal: ctrl.signal,
-        headers: { "Content-Type": "application/json", apikey: SHARED.key, Authorization: "Bearer " + SHARED.key, Prefer: "return=representation" },
-        body: JSON.stringify({ content: text, reply: "", owner_secret: secret, created_at: new Date().toISOString() }),
+        headers,
+        body: JSON.stringify(body),
       });
       clearTimeout(tm);
       if (!res.ok) throw new Error("HTTP " + res.status);
@@ -1156,8 +1436,8 @@ async function fetchShared(timeoutMs = 8000) {
     const ctrl = new AbortController();
     const tm = setTimeout(() => ctrl.abort(), timeoutMs);
     try {
-      /* 内嵌 replies：一次请求拿到心事 + 全部云端回应 + 真实计数 */
-      const res = await fetch(`${SHARED.url}/rest/v1/${SHARED.table}?select=id,content,created_at,hugs,lamps,replies(id,content,created_at)&order=created_at.desc&limit=50`, {
+      /* 内嵌 replies：一次请求拿到心事 + 全部云端回应 + 真实计数 + 作者昵称 */
+      const res = await fetch(`${SHARED.url}/rest/v1/${SHARED.table}?select=id,content,created_at,hugs,lamps,author_name,replies(id,content,created_at)&order=created_at.desc&limit=50`, {
         headers: { apikey: SHARED.key, Authorization: "Bearer " + SHARED.key },
         signal: ctrl.signal,
       });
@@ -1169,7 +1449,8 @@ async function fetchShared(timeoutMs = 8000) {
         time: fmtDate(new Date(r.created_at).getTime()),
         hugs: r.hugs || 0,
         lamps: r.lamps || 0,
-        replies: (r.replies || []).map((x) => esc(x.content)),
+        author: r.author_name || "",
+        replies: (r.replies || []).map((x) => ({ id: x.id, text: esc(x.content) })),
       }));
     } finally { clearTimeout(tm); }
   };
@@ -1194,14 +1475,16 @@ async function renderOthers() {
   }
   const react = getReact();
   const own = getOwn();
+  const isMine = (id) => !!own[id] || authState.myIds.includes(id);
   list.innerHTML = others.map((e) => {
     const r = react[e.id] || {};
+    const who = e.author ? "🌿 " + e.author : "🕶 匿名旅人";
     return `
     <div class="note" data-note="${e.id}">
       <div class="note-text">${esc(e.text)}</div>
-      ${own[e.id] ? `<div class="own-tools"><button class="own-btn" data-edit="${e.id}">✏️ 修改</button><button class="own-btn" data-del="${e.id}">🗑 拿回这条心事</button></div>` : ""}
-      ${e.replies.length ? `<div class="user-replies">${e.replies.map((t) => `<div>💬 ${t}</div>`).join("")}</div>` : ""}
-      <div class="note-meta"><span>${esc(e.time)} · 收到 ${e.hugs} 个抱抱 · ${e.lamps} 颗小太阳${e.replies.length ? ` · ${e.replies.length} 句回应` : ""}</span></div>
+      ${isMine(e.id) ? `<div class="own-tools"><button class="own-btn" data-edit="${e.id}">✏️ 修改</button><button class="own-btn" data-del="${e.id}">🗑 拿回这条心事</button></div>` : ""}
+      ${e.replies.length ? `<div class="user-replies">${e.replies.map((t) => `<div>💬 ${t.text}</div>`).join("")}</div>` : ""}
+      <div class="note-meta"><span>${who} · ${esc(e.time)} · 收到 ${e.hugs} 个抱抱 · ${e.lamps} 颗小太阳${e.replies.length ? ` · ${e.replies.length} 句回应` : ""}</span></div>
       <div class="reacts">
         <button class="react ${r.hug ? "did" : ""}" data-id="${e.id}" data-k="hug">🤗 抱抱 ${e.hugs}</button>
         <button class="react ${r.lamp ? "did" : ""}" data-id="${e.id}" data-k="lamp">☀️ 小太阳 ${e.lamps}</button>
@@ -1282,7 +1565,7 @@ async function renderOthers() {
     });
   });
 
-  /* 我发布的心事：删除（出示发布凭证，云端校验后删除，回应随之消失） */
+  /* 我发布的心事：删除（有凭证走凭证，登录发布走账号身份） */
   list.querySelectorAll("[data-del]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const id = btn.dataset.del;
@@ -1291,14 +1574,21 @@ async function renderOthers() {
       try {
         const ctrl = new AbortController();
         const tm = setTimeout(() => ctrl.abort(), 10000);
-        const res = await fetch(`${SHARED.url}/rest/v1/rpc/delete_whisper`, {
-          method: "POST",
-          signal: ctrl.signal,
-          headers: { "Content-Type": "application/json", apikey: SHARED.key, Authorization: "Bearer " + SHARED.key },
-          body: JSON.stringify({ p_id: Number(id), p_secret: getOwn()[id] || "" }),
-        });
+        let ok = false;
+        if (getOwn()[id]) {
+          const res = await fetch(`${SHARED.url}/rest/v1/rpc/delete_whisper`, {
+            method: "POST",
+            signal: ctrl.signal,
+            headers: { "Content-Type": "application/json", apikey: SHARED.key, Authorization: "Bearer " + SHARED.key },
+            body: JSON.stringify({ p_id: Number(id), p_secret: getOwn()[id] }),
+          });
+          ok = (await res.json()) === true;
+        } else {
+          const res = await authedApi(`/rest/v1/whispers?id=eq.${id}`, { method: "DELETE", signal: ctrl.signal });
+          ok = res.ok;
+        }
         clearTimeout(tm);
-        if (!(await res.json())) throw new Error("rejected");
+        if (!ok) throw new Error("rejected");
         const own = getOwn();
         delete own[id];
         saveOwn(own);
@@ -1343,14 +1633,21 @@ async function renderOthers() {
         try {
           const ctrl = new AbortController();
           const tm = setTimeout(() => ctrl.abort(), 10000);
-          const res = await fetch(`${SHARED.url}/rest/v1/rpc/edit_whisper`, {
-            method: "POST",
-            signal: ctrl.signal,
-            headers: { "Content-Type": "application/json", apikey: SHARED.key, Authorization: "Bearer " + SHARED.key },
-            body: JSON.stringify({ p_id: Number(id), p_secret: getOwn()[id] || "", p_content: content }),
-          });
+          let ok = false;
+          if (getOwn()[id]) {
+            const res = await fetch(`${SHARED.url}/rest/v1/rpc/edit_whisper`, {
+              method: "POST",
+              signal: ctrl.signal,
+              headers: { "Content-Type": "application/json", apikey: SHARED.key, Authorization: "Bearer " + SHARED.key },
+              body: JSON.stringify({ p_id: Number(id), p_secret: getOwn()[id] || "", p_content: content }),
+            });
+            ok = (await res.json()) === true;
+          } else {
+            const res = await authedApi(`/rest/v1/whispers?id=eq.${id}`, { method: "PATCH", signal: ctrl.signal, body: JSON.stringify({ content }) });
+            ok = res.ok;
+          }
           clearTimeout(tm);
-          if (!(await res.json())) throw new Error("rejected");
+          if (!ok) throw new Error("rejected");
           toast("改好啦 ✨");
           await renderOthers();
         } catch {
@@ -1362,11 +1659,65 @@ async function renderOthers() {
   });
 }
 
+/* ---------- 管理面板（仅站长） ---------- */
+async function renderAdmin() {
+  if (!authState.admin) return;
+  const box = $("#adminList");
+  box.innerHTML = `<div class="empty">正在整理……</div>`;
+  const others = await fetchShared();
+  if (!others) {
+    box.innerHTML = `<div class="empty">云端暂时连不上 🍃<br><br><button class="btn btn-ghost" onclick="renderAdmin()">再试一次 🔄</button></div>`;
+    return;
+  }
+  const totalReplies = others.reduce((s, e) => s + e.replies.length, 0);
+  let quotaInfo = "";
+  try {
+    const q = await (await fetch(AI.quotaUrl)).json();
+    quotaInfo = ` · 今日 AI 已用 ${q.limit - q.left}/${q.limit} 轮`;
+  } catch {}
+  $("#adminStats").textContent = `心事 ${others.length} 条 · 回应 ${totalReplies} 条${quotaInfo}`;
+  box.innerHTML = others.map((e) => `
+    <div class="note">
+      <div class="note-text">${esc(e.text)}</div>
+      ${e.replies.map((t) => `<div class="user-replies"><div class="adm-reply-row"><span>💬 ${t.text}</span><button class="adm-del" data-ar="${t.id}">删 ✕</button></div></div>`).join("")}
+      <div class="note-meta">
+        <span>${e.author ? "🌿 " + esc(e.author) : "🕶 匿名"} · ${esc(e.time)} · 🤗${e.hugs} ☀️${e.lamps}</span>
+        <button class="adm-del" data-aw="${e.id}">删除心事 ✕</button>
+      </div>
+    </div>`).join("");
+
+  box.querySelectorAll("[data-aw]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.aw;
+      if (!confirm("删除这条心事和它的全部回应？")) return;
+      try {
+        const res = await authedApi("/rest/v1/rpc/admin_delete_whisper", { method: "POST", body: JSON.stringify({ p_id: Number(id) }) });
+        if ((await res.json()) !== true) throw 0;
+        toast("已删除 🍃");
+        renderAdmin();
+      } catch { toast("删除失败，稍后再试 🍃"); }
+    });
+  });
+  box.querySelectorAll("[data-ar]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.ar;
+      if (!confirm("删除这条回应？")) return;
+      try {
+        const res = await authedApi("/rest/v1/rpc/admin_delete_reply", { method: "POST", body: JSON.stringify({ p_id: Number(id) }) });
+        if ((await res.json()) !== true) throw 0;
+        toast("已删除 🍃");
+        renderAdmin();
+      } catch { toast("删除失败，稍后再试 🍃"); }
+    });
+  });
+}
+
 /* ---------- 启动 ---------- */
 updateBadge();
 renderMine();
 renderChat();
 updateQuota();
+afterAuthChange();
 startIdleCycle();
 tickIdle();
 </script>
