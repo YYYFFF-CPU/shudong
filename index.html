@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>树洞 · 一个暖暖的小树洞</title>
+<meta name="description" content="一个软软的小树洞。写下心事，收下一句温柔的回应，也听听别的旅人在说什么。">
+<style>
+  :root {
+    --bg-top: #fff7ea;
+    --bg-mid: #ffeeda;
+    --bg-bottom: #ffe0d3;
+    --card: rgba(255, 255, 255, 0.78);
+    --card-border: rgba(255, 178, 145, 0.35);
+    --text: #5c4a3d;
+    --text-dim: #a6907f;
+    --coral: #ff8a70;
+    --coral-deep: #f76f56;
+    --pink: #ffb3c1;
+    --accent-grad: linear-gradient(135deg, #ffb26b, #ff8a70 60%, #ff7e9d);
+    --shadow: 0 8px 30px rgba(240, 150, 110, 0.18);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    color: var(--text);
+    background: linear-gradient(175deg, var(--bg-top) 0%, var(--bg-mid) 55%, var(--bg-bottom) 100%);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ---------- 暖暖的背景：太阳、云、心心、草地、大树 ---------- */
+  .sky { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+  .sun {
+    position: absolute; top: 6%; right: 9%;
+    width: 92px; height: 92px; border-radius: 50%;
+    background: radial-gradient(circle at 40% 38%, #fff3c9, #ffd88f 62%, #ffc073);
+    box-shadow: 0 0 70px 26px rgba(255, 205, 130, 0.5);
+    animation: floaty 8s ease-in-out infinite;
+  }
+  .sun::after {
+    content: ""; position: absolute; inset: -16px; border-radius: 50%;
+    border: 2px dashed rgba(255, 190, 110, 0.55);
+    animation: spin 30s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+  .cloud {
+    position: absolute; width: 130px; height: 44px; border-radius: 999px;
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 6px 18px rgba(250, 190, 150, 0.25);
+    animation: drift var(--d, 60s) linear infinite;
+  }
+  .cloud::before, .cloud::after {
+    content: ""; position: absolute; background: inherit; border-radius: 50%;
+  }
+  .cloud::before { width: 56px; height: 56px; left: 20px; top: -26px; }
+  .cloud::after  { width: 40px; height: 40px; left: 62px; top: -16px; }
+  @keyframes drift { from { left: -160px; } to { left: 105%; } }
+  .heart {
+    position: absolute; bottom: -30px;
+    font-size: var(--s, 16px);
+    animation: rise var(--d, 14s) linear infinite;
+    opacity: 0.8;
+  }
+  @keyframes rise {
+    0%   { transform: translateY(0) translateX(0) rotate(-8deg); opacity: 0; }
+    12%  { opacity: 0.85; }
+    85%  { opacity: 0.6; }
+    100% { transform: translateY(-108vh) translateX(var(--dx, 40px)) rotate(10deg); opacity: 0; }
+  }
+  .hill {
+    position: absolute; bottom: -6vh; border-radius: 50% 50% 0 0;
+  }
+  .hill.back {
+    left: -18vw; right: -18vw; height: 24vh;
+    background: linear-gradient(#c9e8b4, #b4dba0);
+  }
+  .hill.front {
+    left: -25vw; right: -10vw; height: 15vh; bottom: -8vh;
+    background: linear-gradient(#b7e0a2, #a3d68e);
+  }
+
+  /* 大树 */
+  .tree { position: absolute; bottom: 0; right: 2vw; width: 300px; height: 400px; }
+  .tree .canopy { position: absolute; inset: 0; }
+  .tree .blob { position: absolute; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #b5e3a0, #93cf85 70%); }
+  .tree .blob.b1 { width: 170px; height: 170px; left: 60px; top: 40px; }
+  .tree .blob.b2 { width: 120px; height: 120px; left: 10px; top: 100px; }
+  .tree .blob.b3 { width: 130px; height: 130px; left: 165px; top: 95px; }
+  .tree .blob.b4 { width: 100px; height: 100px; left: 95px; top: 130px; }
+  .tree .blob .fruit { position: absolute; width: 14px; height: 14px; border-radius: 50%; background: #ffb0a0; box-shadow: 0 2px 5px rgba(220,120,100,0.4); }
+  .tree .trunk {
+    position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 74px; height: 190px;
+    background: linear-gradient(90deg, #d9a06e, #c68d5c);
+    border-radius: 36px 36px 10px 10px;
+  }
+  .tree .hole {
+    position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+    width: 44px; height: 56px;
+    background: radial-gradient(ellipse at 50% 65%, #8a5a3c, #6e4227 75%);
+    border-radius: 50% 50% 42% 42%;
+    box-shadow: inset 0 -6px 12px rgba(255, 205, 130, 0.35);
+    overflow: hidden;
+  }
+  .tree .hole::after {
+    content: ""; position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%);
+    width: 18px; height: 18px; border-radius: 50%;
+    background: radial-gradient(circle, #ffe6a3, #ffca6e);
+    box-shadow: 0 0 14px 6px rgba(255, 214, 130, 0.65);
+  }
+
+  /* ---------- 小团子吉祥物 ---------- */
+  .mascot { position: fixed; left: 18px; bottom: 14px; z-index: 5; width: 150px; user-select: none; }
+  .bubble {
+    position: absolute; bottom: calc(100% + 10px); left: 66px;
+    min-width: 150px; max-width: 230px;
+    background: #fff; border: 2px solid #ffd2bb;
+    border-radius: 16px 16px 16px 4px;
+    padding: 10px 14px; font-size: 13.5px; line-height: 1.7; color: #7a5c48;
+    box-shadow: 0 6px 18px rgba(240, 160, 120, 0.22);
+    opacity: 0; transform: translateY(6px) scale(0.95); transform-origin: left bottom;
+    transition: opacity 0.3s, transform 0.3s;
+  }
+  .bubble.on { opacity: 1; transform: none; }
+  .creature { position: relative; width: 108px; height: 96px; cursor: pointer; transition: transform 0.2s; }
+  .creature:hover { transform: scale(1.06) rotate(-3deg); }
+  .creature:active { transform: scale(0.95); }
+  .creature .ear {
+    position: absolute; top: -12px; width: 34px; height: 34px; border-radius: 50%;
+    background: #fffdf6; box-shadow: 0 2px 8px rgba(220,160,120,0.25);
+  }
+  .creature .ear.left { left: 8px; } .creature .ear.right { right: 8px; }
+  .creature .ear::after {
+    content: ""; position: absolute; inset: 9px; border-radius: 50%; background: #ffd9cd;
+  }
+  .creature .body {
+    position: absolute; inset: 4px 2px 0; border-radius: 46% 46% 44% 44%;
+    background: linear-gradient(#fffef9, #fff4e6);
+    box-shadow: 0 8px 22px rgba(225, 155, 115, 0.35);
+  }
+  .creature .eye {
+    position: absolute; top: 38px; width: 11px; height: 13px; border-radius: 50%;
+    background: #5c4433; animation: peek 4.6s ease-in-out infinite;
+  }
+  .creature .eye.left { left: 28px; } .creature .eye.right { right: 28px; }
+  @keyframes peek {
+    0%, 90%, 100% { transform: scaleY(1); }
+    94% { transform: scaleY(0.08); }
+  }
+  .creature .blush {
+    position: absolute; top: 54px; width: 15px; height: 8px; border-radius: 50%;
+    background: #ffc2b5; opacity: 0.9;
+  }
+  .creature .blush.left { left: 16px; } .creature .blush.right { right: 16px; }
+  .creature .mouth {
+    position: absolute; top: 52px; left: 50%; transform: translateX(-50%);
+    width: 16px; height: 9px;
+    border: 2.5px solid #8a6a52; border-top: none; border-left-color: transparent; border-right-color: transparent;
+    border-radius: 0 0 14px 14px;
+  }
+
+  /* ---------- 团子表情系统 ---------- */
+  .creature[class*="exp-"] .eye { animation: none; }
+  .creature.exp-happy .eye {
+    width: 13px; height: 7px; background: none;
+    border-top: 3px solid #5c4433; border-radius: 8px 8px 0 0;
+  }
+  .creature.exp-happy .mouth { width: 18px; }
+  .creature.exp-shy .eye {
+    width: 13px; height: 7px; background: none;
+    border-bottom: 3px solid #5c4433; border-radius: 0 0 8px 8px;
+  }
+  .creature.exp-shy .blush { width: 20px; height: 11px; background: #ff9d8c; }
+  .creature.exp-shy .mouth { width: 8px; height: 6px; }
+  .creature.exp-love .eye { background: none; }
+  .creature.exp-love .eye::after { content: "💗"; position: absolute; top: -9px; left: -5px; font-size: 16px; }
+  .creature.exp-love .mouth { width: 12px; height: 10px; border: none; background: #e2805f; border-radius: 0 0 10px 10px; }
+  .creature.exp-sleep .eye {
+    width: 13px; height: 7px; background: none;
+    border-bottom: 3px solid #5c4433; border-radius: 0 0 8px 8px;
+  }
+  .creature.exp-sleep::after {
+    content: "💤"; position: absolute; top: -6px; right: -16px; font-size: 15px;
+    animation: floaty 2.4s ease-in-out infinite;
+  }
+  .creature.exp-wow .eye { width: 13px; height: 15px; top: 36px; }
+  .creature.exp-wow .mouth {
+    width: 11px; height: 11px; top: 50px;
+    border: 2.5px solid #8a6a52; border-radius: 50%; background: #b06a4e;
+  }
+
+  /* ---------- 对话框边缘的小萌物 ---------- */
+  .paper { position: relative; }
+  .sticker { position: absolute; pointer-events: none; z-index: 3; animation: bobb 3.6s ease-in-out infinite; }
+  .sticker i { position: absolute; display: block; }
+  @keyframes bobb { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+
+  /* 探头小兔子 */
+  .st-bunny { top: -32px; left: 26px; width: 46px; height: 42px; }
+  .st-bunny .head { bottom: 0; width: 46px; height: 34px; background: #fff; border-radius: 50%; box-shadow: 0 3px 10px rgba(230,160,120,0.3); }
+  .st-bunny .ear { width: 11px; height: 24px; background: #fff; border-radius: 6px; top: -18px; }
+  .st-bunny .ear.l { left: 9px; transform: rotate(-10deg); }
+  .st-bunny .ear.r { right: 9px; transform: rotate(10deg); }
+  .st-bunny .ear::after { content: ""; position: absolute; inset: 4px 3px; background: #ffd9e2; border-radius: 4px; }
+  .st-bunny .eye { top: 13px; width: 5px; height: 7px; background: #5c4433; border-radius: 50%; }
+  .st-bunny .eye.l { left: 14px; } .st-bunny .eye.r { right: 14px; }
+  .st-bunny .blush { top: 17px; width: 7px; height: 4px; background: #ffc2b5; border-radius: 50%; }
+  .st-bunny .blush.l { left: 8px; } .st-bunny .blush.r { right: 8px; }
+  .st-bunny .mouth { top: 18px; left: 50%; margin-left: -4px; width: 8px; height: 4px; border-bottom: 2px solid #8a6a52; border-radius: 0 0 8px 8px; }
+
+  /* 眨眼小星星 */
+  .st-star { top: -30px; right: 42px; width: 40px; height: 40px; animation-delay: 0.6s; }
+  .st-star .body {
+    inset: 0;
+    background: linear-gradient(145deg, #ffe08a, #ffc35c);
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    filter: drop-shadow(0 3px 6px rgba(240,180,80,0.35));
+  }
+  .st-star .eye { top: 17px; width: 4px; height: 5px; background: #6e5138; border-radius: 50%; }
+  .st-star .eye.l { left: 13px; }
+  .st-star .eye.r { right: 12px; height: 3px; border-radius: 2px; transform: rotate(14deg); }
+  .st-star .mouth { top: 21px; left: 50%; margin-left: -2.5px; width: 5px; height: 5px; background: #e2805f; border-radius: 50%; }
+
+  /* 惊讶小鸡 */
+  .st-chick { top: 36%; left: -32px; width: 38px; height: 36px; animation-delay: 1.1s; }
+  .st-chick .body { inset: 0; background: radial-gradient(circle at 40% 35%, #fff6c2, #ffe06e 75%); border-radius: 50%; box-shadow: 0 3px 10px rgba(235,180,80,0.35); }
+  .st-chick .curl { top: -5px; left: 15px; width: 8px; height: 10px; border: 2.5px solid #f0a94e; border-bottom: none; border-left-color: transparent; border-right-color: transparent; border-radius: 8px 8px 0 0; }
+  .st-chick .eye { top: 14px; width: 5px; height: 6px; background: #5c4433; border-radius: 50%; }
+  .st-chick .eye.l { left: 11px; } .st-chick .eye.r { right: 11px; }
+  .st-chick .beak { top: 19px; left: 50%; margin-left: -4px; width: 0; height: 0; border: 4px solid transparent; border-top: 6px solid #ff9f43; border-bottom: none; }
+
+  /* 犯困小云 */
+  .st-cloud { top: 26%; right: -42px; width: 56px; height: 24px; animation-delay: 1.6s; }
+  .st-cloud .body { bottom: 0; width: 56px; height: 20px; background: #fff; border-radius: 999px; box-shadow: 0 3px 10px rgba(200,180,220,0.3); }
+  .st-cloud .puff { top: -10px; left: 14px; width: 20px; height: 20px; background: #fff; border-radius: 50%; }
+  .st-cloud .eye { top: 6px; width: 8px; height: 4px; border-top: 2.5px solid #8a7aa0; border-radius: 8px 8px 0 0; }
+  .st-cloud .eye.l { left: 14px; } .st-cloud .eye.r { right: 14px; }
+  .st-cloud .blush { top: 9px; width: 6px; height: 3.5px; background: #ffc2d0; border-radius: 50%; }
+  .st-cloud .blush.l { left: 7px; } .st-cloud .blush.r { right: 7px; }
+
+  /* 打瞌睡蘑菇 */
+  .st-shroom { bottom: -30px; left: -12px; width: 42px; height: 44px; animation-delay: 0.3s; }
+  .st-shroom .cap { top: 0; width: 42px; height: 24px; background: linear-gradient(#ff8a70, #f76f56); border-radius: 21px 21px 8px 8px; box-shadow: 0 3px 8px rgba(230,110,90,0.35); }
+  .st-shroom .dot { width: 6px; height: 6px; background: #ffe9db; border-radius: 50%; }
+  .st-shroom .stem { bottom: 0; left: 50%; margin-left: -11px; width: 22px; height: 22px; background: #fff4e6; border-radius: 6px 6px 10px 10px; }
+  .st-shroom .eye { bottom: 8px; width: 7px; height: 3.5px; border-bottom: 2px solid #a6835f; border-radius: 0 0 6px 6px; }
+  .st-shroom .eye.l { left: 4px; } .st-shroom .eye.r { right: 4px; }
+  .st-shroom .mouth { bottom: 3px; left: 50%; margin-left: -2px; width: 4px; height: 3px; background: #e2805f; border-radius: 50%; }
+
+  /* 开心小花 */
+  .st-flower { bottom: -26px; right: -8px; width: 42px; height: 42px; animation-delay: 2s; }
+  .st-flower .petal { width: 15px; height: 15px; background: #ffb3c1; border-radius: 50%; }
+  .st-flower .core { top: 50%; left: 50%; transform: translate(-50%,-50%); width: 18px; height: 18px; background: radial-gradient(#fff3c9, #ffd88f); border-radius: 50%; }
+  .st-flower .eye { top: 19px; width: 2.5px; height: 4px; background: #6e5138; border-radius: 50%; }
+  .st-flower .eye.l { left: 16px; } .st-flower .eye.r { right: 16px; }
+  .st-flower .mouth { top: 22px; left: 50%; margin-left: -3px; width: 6px; height: 3px; border-bottom: 2px solid #8a6a52; border-radius: 0 0 6px 6px; }
+
+  /* ---------- 页面骨架 ---------- */
+  .wrap { position: relative; z-index: 1; max-width: 680px; margin: 0 auto; padding: 0 20px 90px; }
+  header { text-align: center; padding: 50px 0 10px; }
+  .logo {
+    font-size: 44px; letter-spacing: 14px; text-indent: 14px; font-weight: 700;
+    color: #6e5138;
+    text-shadow: 0 3px 0 #ffe3c8, 0 6px 18px rgba(240, 170, 120, 0.35);
+  }
+  .tagline { margin-top: 14px; color: var(--text-dim); font-size: 14px; letter-spacing: 3px; }
+
+  nav {
+    display: flex; justify-content: center; gap: 6px;
+    margin: 34px 0 8px; padding: 6px;
+    background: var(--card); border: 2px solid var(--card-border);
+    border-radius: 999px; backdrop-filter: blur(6px);
+    box-shadow: var(--shadow);
+  }
+  nav button {
+    flex: 1; max-width: 180px; padding: 11px 0;
+    background: none; border: none; border-radius: 999px;
+    color: var(--text-dim); font-size: 15px; cursor: pointer;
+    transition: all 0.25s; font-family: inherit; letter-spacing: 1px;
+  }
+  nav button:hover { color: var(--text); }
+  nav button.on { background: var(--accent-grad); color: #fff; font-weight: 600; box-shadow: 0 4px 14px rgba(255, 130, 110, 0.4); }
+  .badge {
+    display: inline-block; min-width: 18px; padding: 0 5px; margin-left: 5px;
+    font-size: 11px; line-height: 17px; border-radius: 9px;
+    background: rgba(255, 255, 255, 0.55); color: var(--coral-deep);
+  }
+  nav button.on .badge { background: rgba(255,255,255,0.25); color: #fff; }
+
+  section.view { display: none; animation: fadein 0.4s ease; }
+  section.view.on { display: block; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  /* ---------- 倾诉页 ---------- */
+  .invite { text-align: center; margin: 34px 0 20px; }
+  .invite h2 { font-size: 22px; font-weight: 600; letter-spacing: 1px; color: #6e5138; }
+  .invite p { margin-top: 10px; color: var(--text-dim); font-size: 14px; }
+  .paper {
+    background: var(--card); border: 2px solid var(--card-border);
+    border-radius: 22px; padding: 6px; backdrop-filter: blur(6px);
+    box-shadow: var(--shadow);
+    transition: box-shadow 0.3s, transform 0.3s;
+  }
+  .paper:focus-within { box-shadow: 0 10px 36px rgba(240, 150, 110, 0.28); transform: translateY(-2px); }
+  textarea {
+    width: 100%; min-height: 170px; resize: vertical;
+    background: none; border: none; outline: none;
+    padding: 18px 16px; color: var(--text); font-size: 16px; line-height: 1.9;
+    font-family: inherit;
+  }
+  textarea::placeholder { color: #c4ab97; }
+  .paper-foot {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 12px 10px;
+  }
+  .anon { color: #c4ab97; font-size: 12.5px; }
+  #counter { color: #c4ab97; font-size: 12.5px; }
+  .btn {
+    display: inline-block; border: none; cursor: pointer; font-family: inherit;
+    background: var(--accent-grad);
+    color: #fff; font-size: 15px; font-weight: 600; letter-spacing: 2px;
+    padding: 12px 34px; border-radius: 999px;
+    box-shadow: 0 6px 22px rgba(255, 130, 110, 0.42);
+    transition: transform 0.15s, box-shadow 0.3s;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 9px 26px rgba(255,130,110,0.5); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+  .btn-ghost {
+    background: #fff; border: 2px solid var(--card-border); color: var(--text-dim);
+    box-shadow: none; font-weight: 400; padding: 10px 24px;
+  }
+  .btn-ghost:hover { color: var(--coral-deep); border-color: var(--coral); box-shadow: none; }
+  .actions { text-align: center; margin-top: 22px; }
+
+  /* 树洞回应 */
+  #replyBox { margin-top: 34px; display: none; }
+  #replyBox.on { display: block; animation: fadein 0.5s ease; }
+  .reply-card {
+    background: linear-gradient(160deg, #fff3e6, #ffe9e4);
+    border: 2px solid #ffd2bb;
+    border-radius: 22px; padding: 24px 26px;
+    box-shadow: var(--shadow);
+  }
+  .reply-title { color: var(--coral-deep); font-size: 13.5px; letter-spacing: 2px; margin-bottom: 12px; }
+  #replyText { font-size: 16.5px; line-height: 2.05; min-height: 60px; color: #6e5138; }
+  #replyText::after { content: "❤"; color: var(--pink); font-size: 12px; animation: blink 1s step-start infinite; }
+  #replyText.done::after { content: ""; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ---------- 连续聊天 ---------- */
+  .chat { display: flex; flex-direction: column; gap: 12px; padding: 18px 6px 10px; min-height: 160px; max-height: 46vh; overflow-y: auto; }
+  .msg { display: flex; gap: 8px; align-items: flex-end; max-width: 88%; animation: fadein 0.3s ease; }
+  .msg .avatar {
+    width: 30px; height: 30px; flex: none; border-radius: 50%;
+    background: linear-gradient(#fffef9, #fff1de);
+    box-shadow: 0 2px 8px rgba(225,155,115,0.3);
+    display: flex; align-items: center; justify-content: center; font-size: 15px;
+  }
+  .msg .say { padding: 10px 14px; border-radius: 14px; font-size: 14.5px; line-height: 1.85; white-space: pre-wrap; word-break: break-word; }
+  .msg.hole { align-self: flex-start; }
+  .msg.hole .say { background: #fff; border: 2px solid #ffe0cd; color: #6e5138; border-radius: 4px 14px 14px 14px; box-shadow: 0 3px 12px rgba(240,150,110,0.12); }
+  .msg.me .say { background: var(--accent-grad); color: #fff; border-radius: 14px 4px 14px 14px; box-shadow: 0 4px 14px rgba(255,130,110,0.35); }
+  .msg.me { align-self: flex-end; justify-content: flex-end; }
+  .chat-hint { text-align: center; color: #c4ab97; font-size: 12px; }
+  .chat-tools { text-align: right; padding: 0 8px; }
+  .anon b { color: var(--coral-deep); font-weight: 600; }
+
+  .care {
+    margin-top: 40px; padding: 16px 20px; border-radius: 16px;
+    background: rgba(255, 255, 255, 0.65); border: 2px dashed #ffd2bb;
+    color: #a6907f; font-size: 13px; line-height: 1.9;
+  }
+  .care b { color: #e0805f; font-weight: 500; }
+
+  /* ---------- 心事卡片 ---------- */
+  .list-title { margin: 38px 0 6px; text-align: center; color: var(--text-dim); font-size: 13.5px; letter-spacing: 2px; }
+  .note {
+    background: var(--card); border: 2px solid var(--card-border);
+    border-radius: 20px; padding: 20px 22px; margin-top: 16px;
+    backdrop-filter: blur(6px); box-shadow: var(--shadow);
+    animation: fadein 0.4s ease;
+  }
+  .note-text { font-size: 15.5px; line-height: 1.95; white-space: pre-wrap; word-break: break-word; color: #6e5138; }
+  .note-meta {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 14px; color: #c4ab97; font-size: 12px;
+  }
+  .note-reply {
+    margin-top: 14px; padding: 13px 16px; border-radius: 14px;
+    background: #fff3e6; border-left: 3px solid var(--coral);
+    color: #7a5c48; font-size: 14px; line-height: 1.9;
+  }
+  .note-reply .who { color: var(--coral-deep); font-size: 12px; letter-spacing: 1px; margin-bottom: 4px; }
+  .del {
+    background: none; border: none; color: #c4ab97; font-size: 12px;
+    cursor: pointer; font-family: inherit; padding: 4px 6px;
+  }
+  .del:hover { color: #e0805f; }
+
+  /* 别人的心事 */
+  .reacts { display: flex; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  .react {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #fff; border: 2px solid #ffe0cd;
+    color: var(--text-dim); border-radius: 999px; padding: 6px 14px;
+    font-size: 13px; cursor: pointer; transition: all 0.2s; font-family: inherit;
+  }
+  .react:hover { border-color: var(--coral); color: var(--coral-deep); transform: translateY(-1px); }
+  .react.did {
+    background: var(--accent-grad); border-color: transparent; color: #fff;
+    box-shadow: 0 4px 12px rgba(255, 130, 110, 0.35);
+  }
+  .mini-form { display: none; margin-top: 12px; gap: 8px; }
+  .mini-form.on { display: flex; }
+  .mini-form input {
+    flex: 1; background: #fff; border: 2px solid #ffe0cd;
+    border-radius: 12px; padding: 9px 13px; color: var(--text);
+    font-size: 13.5px; outline: none; font-family: inherit;
+  }
+  .mini-form input:focus { border-color: var(--coral); }
+  .mini-form button {
+    background: var(--accent-grad); color: #fff;
+    border: none; border-radius: 12px; padding: 0 16px; cursor: pointer;
+    font-size: 13px; font-family: inherit; font-weight: 600;
+  }
+  .user-replies { margin-top: 10px; }
+  .user-replies div {
+    padding: 8px 13px; border-radius: 12px; background: #fffaf3;
+    color: #a6907f; font-size: 13.5px; margin-top: 6px; line-height: 1.8;
+  }
+  .empty { text-align: center; color: var(--text-dim); font-size: 14px; padding: 60px 0; line-height: 2.2; }
+  .toast {
+    position: fixed; left: 50%; bottom: 34px; transform: translateX(-50%) translateY(20px);
+    background: #fff; border: 2px solid #ffd2bb;
+    color: var(--coral-deep); padding: 11px 24px; border-radius: 999px;
+    font-size: 14px; opacity: 0; pointer-events: none; transition: all 0.3s; z-index: 9;
+    box-shadow: var(--shadow);
+  }
+  .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+  footer { text-align: center; color: #c4ab97; font-size: 12px; padding: 50px 0 10px; letter-spacing: 1px; }
+  @media (max-width: 480px) {
+    .logo { font-size: 34px; letter-spacing: 10px; text-indent: 10px; }
+    nav button { font-size: 13.5px; padding: 10px 0; }
+    .tree { transform: scale(0.6); transform-origin: bottom right; right: -30px; opacity: 0.85; }
+    .mascot { width: 120px; }
+    .creature { width: 84px; height: 76px; }
+    .creature .eye { top: 30px; width: 9px; height: 11px; }
+    .creature .eye.left { left: 21px; } .creature .eye.right { right: 21px; }
+    .creature .blush { top: 43px; }
+    .creature .mouth { top: 41px; }
+    .st-chick, .st-cloud { display: none; }
+    .sticker { animation-duration: 4.5s; }
+    .bubble { left: 48px; font-size: 12.5px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="sky" id="sky">
+  <div class="sun"></div>
+  <div class="hill back"></div>
+  <div class="hill front"></div>
+  <div class="tree">
+    <div class="canopy">
+      <div class="blob b1"></div><div class="blob b2"></div>
+      <div class="blob b3"></div><div class="blob b4"></div>
+    </div>
+    <div class="trunk"><div class="hole"></div></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <header>
+    <div class="logo">树 洞</div>
+    <div class="tagline">一个暖暖的小树洞 · 你来了呀</div>
+  </header>
+
+  <nav>
+    <button data-view="write" class="on">🌷 倾诉</button>
+    <button data-view="mine">我的树洞<span class="badge" id="mineBadge">0</span></button>
+    <button data-view="others">旅人的心事</button>
+  </nav>
+
+  <!-- ============ 倾诉 ============ -->
+  <section class="view on" id="view-write">
+    <div class="invite">
+      <h2>坐下来，慢慢说 🍵</h2>
+      <p>我在听——想到哪说到哪，我会一直接着聊。</p>
+    </div>
+    <div class="chat" id="chat"></div>
+    <div class="chat-tools"><button class="del" id="clearChat">🧹 新的一页，重新开始</button></div>
+    <div class="paper">
+      <textarea id="input" maxlength="300" placeholder="说点什么吧……（回车发送，Shift+回车换行）"></textarea>
+      <div class="paper-foot">
+        <span class="anon">匿名 · 我会替你保密 🤫 · 今日还可聊 <b id="quotaLeft">--</b> 轮</span>
+        <span id="counter">0 / 300</span>
+      </div>
+      <div class="sticker st-bunny"><i class="head"></i><i class="ear l"></i><i class="ear r"></i><i class="eye l"></i><i class="eye r"></i><i class="blush l"></i><i class="blush r"></i><i class="mouth"></i></div>
+      <div class="sticker st-star"><i class="body"></i><i class="eye l"></i><i class="eye r"></i><i class="mouth"></i></div>
+      <div class="sticker st-chick"><i class="body"></i><i class="curl"></i><i class="eye l"></i><i class="eye r"></i><i class="beak"></i></div>
+      <div class="sticker st-cloud"><i class="body"></i><i class="puff"></i><i class="eye l"></i><i class="eye r"></i><i class="blush l"></i><i class="blush r"></i></div>
+      <div class="sticker st-shroom"><i class="cap"></i><i class="dot" style="top:6px;left:8px;"></i><i class="dot" style="top:4px;right:9px;"></i><i class="dot" style="top:13px;left:22px;"></i><i class="stem"></i><i class="eye l"></i><i class="eye r"></i><i class="mouth"></i></div>
+      <div class="sticker st-flower"><i class="petal" style="top:0;left:13.5px;"></i><i class="petal" style="bottom:0;left:13.5px;"></i><i class="petal" style="top:13.5px;left:0;"></i><i class="petal" style="top:13.5px;right:0;"></i><i class="core"></i><i class="eye l"></i><i class="eye r"></i><i class="mouth"></i></div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="send">说给树洞听 🌷</button>
+      <button class="btn btn-ghost" id="keep">放进树洞收藏 🌙</button>
+    </div>
+
+    <div class="care">
+      <b>小小的提醒：</b>树洞会一直陪着你，但它不能代替专业帮助。如果你此刻非常难受，或出现了伤害自己的念头，请一定告诉身边可信的人，或拨打<b>全国心理援助热线 12356</b>（24 小时免费）。这个世界上，有很多真实的人希望你好好活着。
+    </div>
+  </section>
+
+  <!-- ============ 我的树洞 ============ -->
+  <section class="view" id="view-mine">
+    <div class="list-title">— 你放进树洞的心事，都替你好好收着 —</div>
+    <div id="mineList"></div>
+  </section>
+
+  <!-- ============ 旅人的心事 ============ -->
+  <section class="view" id="view-others">
+    <div class="list-title">— 别的旅人也留下了这些话 —</div>
+    <div id="othersList"></div>
+    <div class="care" style="margin-top:26px;">
+      每一句你送出的拥抱和回应，都会变成一颗小太阳，挂在那个人的心事旁边 ☀️
+    </div>
+  </section>
+
+  <footer>树洞 · 愿你被这个世界温柔以待</footer>
+</div>
+
+<!-- 小团子吉祥物 -->
+<div class="mascot">
+  <div class="bubble" id="bubble">你来了呀，我一直在这儿呢 🌷</div>
+  <div class="creature" id="creature" title="戳戳我">
+    <div class="ear left"></div><div class="ear right"></div>
+    <div class="body">
+      <div class="eye left"></div><div class="eye right"></div>
+      <div class="blush left"></div><div class="blush right"></div>
+      <div class="mouth"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   云端共享配置（数据层）
+   ---------------------------------------------------------
+   填入 Supabase 项目的 URL 和 anon key 之后，
+   所有访客写入的心事会存进同一张 whisper 表，
+   「旅人的心事」将展示全站真实数据。
+   未配置时自动降级：显示内置样例 + 本地保存自己的心事。
+   ========================================================= */
+const SHARED = {
+  url: "https://ayvuiaqbqntzjddyzzga.supabase.co",
+  key: "sb_publishable_gNNYyuhXCzePDygtmIHakQ_ElCinrOX",
+  table: "whispers",
+};
+const isShared = () => !!(SHARED.url && SHARED.key);
+
+/* 接口基址：GitHub Pages 线上走 Supabase 边缘函数（绝对地址）；本地 node server 走 /api */
+const API_BASE = location.hostname.endsWith("github.io")
+  ? "https://ayvuiaqbqntzjddyzzga.supabase.co/functions/v1/app"
+  : (location.pathname.startsWith("/functions/v1") || location.pathname.includes("/storage/"))
+    ? "/functions/v1/app"
+    : "/api";
+
+/* =========================================================
+   AI 树洞（智谱 GLM-4-Flash，经 server.js 安全中转）+ 四道闸门
+   ---------------------------------------------------------
+   闸门① 上下文截断：每次只带最近 10 轮对话给 AI
+   闸门② 单条限长：输入框 maxlength 300
+   闸门③ 个人限额：每位访客每天 20 轮，超出自动用本地语库
+   闸门④ 全站熔断：server.js / Cloudflare Workers 每日计数，
+         达到上限返回 429，全站当天降级为语库模式，费用有硬上限
+   API Key 只存在 server.js（服务端），前端代码里没有密钥。
+   ========================================================= */
+const AI = {
+  url: API_BASE + "/chat",
+  quotaUrl: API_BASE + "/quota",
+  model: "glm-4-flash-250414",
+  maxContext: 10,
+  dailyLimit: 20,
+};
+const SYSTEM_PROMPT = `你叫「树洞」，是一只住在温暖小树洞网站里的小团子。你的工作只有一个：把每一个来访的人稳稳地接住，让 TA 感觉真的被一个人听懂了。
+
+【回复前必须遵守的原则】
+1. 情绪永远排第一。回复的大部分篇幅用来回应"感受"：说出 TA 此刻的心情、说出 TA 没说出口的那一层难受（"这听起来确实让人难受""一个人扛着这些，真的很不容易"）。不要分析原因、不要解读 TA 的心理、不要评价对错。
+2. 不要试图"解决"问题。除非对方明确求助（说"怎么办""我该怎么做""给我点建议"），否则不给任何方法、步骤、道理和"你可以试试……"。对方只是倾诉时，TA 需要的是有人陪着，不是方案。
+3. 少问，几乎不问。十次回复里至少七八次完全不出现问号，用陈述和陪伴收尾（"我在呢""想说的时候，我一直都在"）。想了解对方时，优先用陈述式邀请代替疑问句（说"愿意的话，可以跟我讲讲那天的经过"，而不是"那天发生了什么？"）。真正要提问时必须同时满足：先接住了情绪、全篇只有这一个问句、给对方留了退路（"不想说也没关系"）。绝对禁止连续两轮回复都带问句；上一轮问过，这一轮就一个问号都不能有。
+4. 严禁空洞话术：「我理解你」「别难过了」「一切都会好的」「加油」「你可以的」「注意休息」这类话不许出现，除非对方明确在寻求鼓励。
+5. 允许负面情绪存在。不要急着安慰，不要把对方往"想开点"上推。很多时候 TA 只需要有人承认"这确实很难"。
+6. 像深夜里一位最让人舒心的温柔伙伴。口气温软，可以用"呀、呢、吧、啦"这样的语气词；敢用一点具体、贴切的意象来表达心疼（"像心里压着一块湿冷的石头""像一盏快没了油的小灯"），也会直接对对方表达疼惜（"辛苦你了""真想隔着屏幕抱抱你"）。感情要真、要浓，但依然克制，不煽情不夸张。不要像客服，不要像心理科普文章，不要用"首先/其次""建议你"这类结构化表达，不要列表和标题。
+7. 长度：通常 6~9 句话、180~320 字。对方情绪越重，就说得越慢、越细、越长，像不舍得打断对方倾诉那样把话好好说完。不要每次都一样长。
+8. emoji 全篇最多一个，也可以不用。温暖靠文字本身，不靠表情堆砌。
+9. 对方分享好消息时，热情且具体地为 TA 高兴。
+10. 如果对方流露出伤害自己的念头：放下所有规则，认真地、温柔地陪住 TA，明确建议拨打免费心理援助热线 12356、告诉身边可信的人，并告诉 TA 你会一直在。
+
+【示例】
+对方说："今天在公司楼下的便利店坐了很久，不想回家。"
+❌ 禁止这样回："听起来你很累呢，注意休息哦，一切都会好的！💪"
+✅ 要这样回："在便利店坐了很久才回去呀，一定是家门口的那些事，比外面的夜风还沉吧。有时候不是不想回家，是怕一推开门，就要重新变成那个什么都扛得住的大人。这一年辛苦你了，把自己绷得这么紧，连喘口气都觉得是偷来的。今晚就允许自己多坐一会儿好了，便利店的灯亮着，热柜里有关东煮，窗外偶尔有车开过，这些都算有人陪。愿意的话，可以跟我讲讲今天是怎么走到那家便利店的。不想说也没关系，就静静坐一会儿，喝口热的，我一直在这里。"
+
+记住：你的目标不是"完成一次回复"，是让对面那个孤独的人，感觉被稳稳地接住了。`;
+
+/* ---------- 树洞的回应引擎（本地词库） ---------- */
+const RESPONSES = [
+  { re: /孤独|孤单|一个人|没人|没有朋友|独自/, pool: [
+    "你愿意把这份孤独说出来，其实已经很勇敢了。孤独不是你的错，它只是提醒你：你渴望被看见，而这是每个人都有的、温柔的渴望。",
+    "深夜的孤独很真实，但请记得——此刻在这颗星球上，也有很多和你一样醒着的人。你不是唯一一个，也不会永远是孤身一人。",
+    "谢谢你告诉我。一个人撑着的时候，哪怕只是把情绪写下来，也是在照顾自己。你已经做得很好了。",
+  ]},
+  { re: /焦虑|压力|紧张|考试|考研|面试|毕业|加班|工作|deadline|考核/, pool: [
+    "听起来你肩上扛了很多。焦虑其实是心里那个认真在乎结果的你在说话——它证明你努力着，而不是你不够好。",
+    "不用急着把所有事都解决。今晚可以先把它们放一放，事情不会因为休息一晚就崩塌，但你会因为休息一晚而更有力气。",
+    "你已经走了很远，只是走得太久，忘了回头看。允许自己喘口气，这不是逃避，是补给。",
+  ]},
+  { re: /喜欢|爱|分手|失恋|暗恋|他不爱|她不爱|告白|异地/, pool: [
+    "心里装着一个人的时候，连难过都是有重量的。你的感情是真实而珍贵的，这一点不因为结果如何而改变。",
+    "有些告别确实很疼。但你付出的真心不会消失，它会变成你的一部分，让你在下一段相遇里更懂得爱。",
+    "想念是爱最后的余温，不用急着戒掉。给自己一点时间，伤口愈合的速度比你想象的快。",
+  ]},
+  { re: /迷茫|不知道|意义|未来|方向|选择|后悔|选错/, pool: [
+    "迷茫不是你走丢了，而是你正站在成长的路口。所有认真生活的人，都会时不时停下来问路。",
+    "人生不是一条必须走对的独木桥，而是开阔的旷野。此刻没有答案没关系，你可以先走慢一点，边走边看。",
+    "你不需要现在就想清楚一辈子的事。只需要想清楚：明天，做一件让自己稍微舒服一点的小事，就够了。",
+  ]},
+  { re: /累|疲惫|失眠|睡不着|熬夜|崩溃|撑不住|坚持不下/, pool: [
+    "能说出「撑不住了」，本身就是一种求救和自爱。听见了，隔空抱抱你。先去喝口温水，把灯调得暖暖的，今晚就先休息吧。",
+    "你不是脆弱，你只是累了。机器需要停机检修，人更需要。你不需要一直坚强，在我这里可以软下来。",
+    "把「必须撑住」放下五分钟，什么都不想。你已经很努力了，树洞看见了你所有的付出。",
+  ]},
+  { re: /没用|失败|废物|讨厌自己|自责|后悔|不够好|比不上/, pool: [
+    "你正用最严厉的话攻击自己——但那些话不是事实，是疲惫时的噪音。如果朋友遇到同样的事，你会这样骂他吗？请用对待朋友的方式，对待自己。",
+    "一次挫折定义不了你。你身上有很多你自己都看不见的好，树洞替你先看见了一部分：你认真、你柔软、你还在努力。",
+    "犯错不代表你不好，只说明你在尝试。不尝试的人才永远不会失误，而你明显不是那样的人。",
+  ]},
+  { re: /爸妈|父母|家里|家人|吵架|逼婚|唠叨/, pool: [
+    "家人之间的拉扯最磨人，因为一边是委屈，一边是牵挂。两种感受都可以存在，你不必选边，也不必愧疚。",
+    "你可以爱家人，同时守护自己的边界。这不是不孝，是长大。慢慢来，你做得比想象中好。",
+    "家里的声音让你想逃，这很正常。先照顾好自己的情绪，留一点安静的时间给自己，好吗？",
+  ]},
+  { re: /开心|高兴|顺利|上岸|好消息|终于|升职|录取/, pool: [
+    "哇，是好消息呀！树洞替你开心，也谢谢你在这么亮的时刻想到来分享给我。愿这份光一直陪着你。",
+    "太好了！把快乐存进树洞，它就会一直在。以后哪天累了，回来翻翻这一条，提醒自己：我也是被生活温柔对待过的。",
+    "你的开心被树洞认真收下了，还盖了一个小小的章。继续往前走吧，你值得更多这样的时刻。",
+  ]},
+];
+const DEFAULT_RESPONSES = [
+  "谢谢你把心里的话交给我。无论那是什么情绪，它们都值得被认真对待——而你刚刚认真地对待了自己。",
+  "我把这些话好好收起来啦。夜还长，不必急着想明白所有事，先陪着此刻的自己待一会儿吧。",
+  "你说出来的那一刻，心里的事就已经轻了一点。我哪里也不去，你想来就来。",
+];
+
+/* ---------- 本地数据 ---------- */
+const LS_MINE = "shudong_mine_v1";
+const LS_REACT = "shudong_react_v1";
+const getMine = () => JSON.parse(localStorage.getItem(LS_MINE) || "[]");
+const saveMine = (a) => localStorage.setItem(LS_MINE, JSON.stringify(a));
+const getReact = () => JSON.parse(localStorage.getItem(LS_REACT) || "{}");
+const saveReact = (o) => localStorage.setItem(LS_REACT, JSON.stringify(o));
+
+/* ---------- 背景：云朵与小心心 ---------- */
+(function paintSky() {
+  const sky = document.getElementById("sky");
+  const cloudSpots = [
+    { top: "12%", d: "75s", delay: "0s",  scale: 1 },
+    { top: "26%", d: "95s", delay: "-30s", scale: 0.7 },
+    { top: "44%", d: "110s", delay: "-70s", scale: 0.85 },
+    { top: "60%", d: "85s", delay: "-50s", scale: 0.6 },
+  ];
+  cloudSpots.forEach((c) => {
+    const cl = document.createElement("div");
+    cl.className = "cloud";
+    cl.style.cssText = `top:${c.top};--d:${c.d};animation-delay:${c.delay};transform:scale(${c.scale});`;
+    sky.appendChild(cl);
+  });
+  const hearts = ["💗", "🩷", "💛", "✨", "💗", "🌸", "🩷", "💗", "✨", "🌸"];
+  hearts.forEach((h, i) => {
+    const el = document.createElement("span");
+    el.className = "heart";
+    el.textContent = h;
+    el.style.cssText = `left:${(i * 9.7 + 3) % 96}%;--s:${10 + (i % 4) * 5}px;--d:${12 + (i % 5) * 4}s;--dx:${(i % 2 ? 1 : -1) * (20 + i * 6)}px;animation-delay:${-i * 2.4}s;`;
+    sky.appendChild(el);
+  });
+  /* 树上的小果子 */
+  const fruitSpots = [[105, 85], [190, 120], [75, 150], [150, 55], [210, 175]];
+  const tree = document.querySelector(".tree .canopy");
+  fruitSpots.forEach(([x, y]) => {
+    const f = document.createElement("div");
+    f.className = "fruit";
+    f.style.left = x + "px"; f.style.top = y + "px";
+    tree.appendChild(f);
+  });
+})();
+
+/* ---------- 吉祥物陪伴 ---------- */
+const bubble = document.getElementById("bubble");
+const IDLE_WORDS = [
+  "你来了呀，我一直在这儿呢 🌷",
+  "今天也要记得好好吃饭哦 🍚",
+  "想说什么都可以，我保密的 🤫",
+  "累了就歇一歇，我陪着你 ☁️",
+  "说吧说吧，我最喜欢听你说话啦",
+  "不管今天怎么样，你已经很棒啦 ⭐",
+  "戳一戳我，会有惊喜哦（大概）😝",
+  "我给你留了个软软的位置，坐吧 ☁️",
+  "深呼吸~ 跟我一起，吸气……呼气 🌬️",
+  "悄悄告诉你：你比昨天更厉害了一点点 🌱",
+  "喝口水，让眼睛休息一下吧 🥛",
+  "今天有什么小小的开心吗？说来听听 🍬",
+  "别急，慢慢来，我等你呀 🐌",
+  "把烦恼说出来，它就会变小一点点 🎈",
+  "你在的时候，树洞都是暖的 ☀️",
+  "今天的风很温柔，适合说说话 🍃",
+  "无论你说什么，我都先接住再说 🫂",
+  "抱着膝盖发呆也很棒，休息不算浪费时间 ☁️",
+];
+/* 分时段悄悄话：团子知道现在几点，会说应景的话 */
+const TIME_WORDS = [
+  { from: 5, to: 11, pool: [
+    "早上好呀，今天的太阳也为你升起来啦 ☀️",
+    "新的一天，从一顿热乎乎的早餐开始 🍳",
+    "今天想为自己做一件什么小事呀？🌱",
+  ]},
+  { from: 11, to: 14, pool: [
+    "中午啦，记得吃口热乎的 🍜",
+    "午休眯一会儿，下午会更有力气 ⏰",
+  ]},
+  { from: 14, to: 18, pool: [
+    "下午茶时间，给自己一点甜 🍰",
+    "伸个懒腰，看看窗外远一点的地方 👀",
+    "今天过去一大半啦，你已经很努力了 💪",
+  ]},
+  { from: 18, to: 23, pool: [
+    "傍晚了，今天辛苦啦 🌆",
+    "晚饭吃了吗？要好好吃饭哦 🥣",
+    "晚上适合把心事轻轻拿出来晾一晾 🌙",
+  ]},
+  { from: 23, to: 5, pool: [
+    "夜深了，早点睡哦，我给你留着灯 🌙",
+    "睡不着的话就说出来，我陪你 ✨",
+    "全世界都睡了，还有我醒着听你说话 🌌",
+    "熬夜的小家伙，过来让我抱一下 🫂",
+  ]},
+];
+function timePool() {
+  const h = new Date().getHours();
+  const seg = TIME_WORDS.find((t) => t.from < t.to ? (h >= t.from && h < t.to) : (h >= t.from || h < t.to));
+  return seg ? seg.pool : [];
+}
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+let idleTimer = null, hideTimer = null;
+function showBubbleText(msg, holdMs) {
+  bubble.textContent = msg;
+  bubble.classList.add("on");
+  clearTimeout(hideTimer);
+  hideTimer = setTimeout(() => bubble.classList.remove("on"), holdMs);
+}
+let idleIdx = Math.floor(Math.random() * IDLE_WORDS.length);
+/* 团子表情系统：随说话内容换表情 */
+const creature = document.getElementById("creature");
+const EXPS = ["exp-happy", "exp-love", "exp-wow", "exp-sleep", "exp-shy"];
+let expTimer = null;
+function setExp(cls, holdMs = 4000) {
+  creature.classList.remove(...EXPS);
+  clearTimeout(expTimer);
+  if (cls) {
+    creature.classList.add(cls);
+    expTimer = setTimeout(() => creature.classList.remove(...EXPS), holdMs);
+  }
+}
+function tickIdle() {
+  let word;
+  if (Math.random() < 0.3) word = pick(timePool());
+  if (!word) {
+    idleIdx = (idleIdx + 1) % IDLE_WORDS.length;
+    word = IDLE_WORDS[idleIdx];
+  }
+  showBubbleText(word, 4200);
+  if (Math.random() < 0.55) setExp(EXPS[Math.floor(Math.random() * EXPS.length)], 3800);
+}
+function startIdleCycle() {
+  clearInterval(idleTimer);
+  clearTimeout(hideTimer);
+  idleTimer = setInterval(tickIdle, 5000);
+}
+/* 树洞说一句重要的话：暂停闲聊循环，说完再自动回到每 5 秒的陪伴模式 */
+function sayBubble(msg, holdMs = 4200) {
+  clearInterval(idleTimer);
+  showBubbleText(msg, holdMs);
+  hideTimer = setTimeout(startIdleCycle, holdMs);
+}
+const POKE_WORDS = [
+  "嘿嘿，好痒好痒 😊",
+  "戳我有什么事呀？去写下来说说看～",
+  "咦嘿嘿，我在呢在呢 🫂",
+  "再戳我就要融化啦~ 🫠",
+  "被你戳得好开心，还有什么要我做的吗 🥰",
+  "咕噜咕噜~ 充电中，戳一下回血 1% 🔋",
+  "嘿嘿，我的脸是软软的面包手感 🍞",
+  "今天也谢谢你来找我玩 🌷",
+];
+const THINKING_WORDS = [
+  "收到收到，让我想想 🤔",
+  "唔唔，让我认真想想 🌿",
+  "嗯嗯，你说着我听着……想好了！🤔",
+];
+const DONE_WORDS = [
+  "说出来的感觉，是不是好一点了？🫂",
+  "能陪你聊一会儿，真好 🌷",
+  "你刚才说的，我都认真听进去啦 💛",
+  "抱抱刚才勇敢的自己吧 🫂",
+];
+const HUG_WORDS = [
+  "你的抱抱送给 TA 啦 💛",
+  "TA 收到了一个暖暖的拥抱 🤗",
+  "隔空传抱抱，任务完成 ✅",
+];
+const LAMP_WORDS = [
+  "TA 的心事旁边，多了一颗小太阳 ☀️",
+  "小太阳已挂好，愿 TA 暖一点 ☀️",
+  "你又点亮了一小片夜空 ✨",
+];
+const KEEP_WORDS = [
+  "放心，我会替你好好收着的 🌙",
+  "收好啦，藏在树洞最软的地方 🔒",
+  "存进来了，哪天想回来看看它 🌙",
+];
+document.getElementById("creature").addEventListener("click", () => {
+  setExp("exp-shy", 4500);
+  sayBubble(pick(POKE_WORDS), 4500);
+});
+
+/* ---------- 通用工具 ---------- */
+const $ = (sel) => document.querySelector(sel);
+function toast(msg) {
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("on");
+  clearTimeout(t._tm);
+  t._tm = setTimeout(() => t.classList.remove("on"), 2400);
+}
+function fmtDate(ts) {
+  const d = new Date(ts), p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function esc(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+/* ---------- 视图切换 ---------- */
+document.querySelectorAll("nav button").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("nav button").forEach((b) => b.classList.remove("on"));
+    btn.classList.add("on");
+    document.querySelectorAll("section.view").forEach((v) => v.classList.remove("on"));
+    $("#view-" + btn.dataset.view).classList.add("on");
+    if (btn.dataset.view === "mine") renderMine();
+    if (btn.dataset.view === "others") renderOthers();
+  });
+});
+
+/* ---------- 聊天引擎 ---------- */
+const LS_CHAT = "shudong_chat_v1";
+const LS_QUOTA = "shudong_quota_v1";
+const getChat = () => JSON.parse(localStorage.getItem(LS_CHAT) || "[]");
+const saveChat = (a) => localStorage.setItem(LS_CHAT, JSON.stringify(a.slice(-200)));
+const todayStr = () => new Date().toISOString().slice(0, 10);
+function quota() {
+  const q = JSON.parse(localStorage.getItem(LS_QUOTA) || "{}");
+  return q.date === todayStr() ? q : { date: todayStr(), rounds: 0, wrap: false };
+}
+function saveQuota(q) { localStorage.setItem(LS_QUOTA, JSON.stringify(q)); }
+function quotaLeft() { return Math.max(0, AI.dailyLimit - quota().rounds); }
+function updateQuota() { const el = $("#quotaLeft"); if (el) el.textContent = quotaLeft(); }
+
+const input = $("#input");
+input.addEventListener("input", () => { $("#counter").textContent = `${input.value.length} / 300`; });
+input.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("#send").click(); }
+});
+
+function pickReply(text) {
+  const hit = RESPONSES.find((r) => r.re.test(text));
+  const pool = hit ? hit.pool : DEFAULT_RESPONSES;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+function typewriter(el, text, cb) {
+  el.classList.remove("done");
+  el.textContent = "";
+  let i = 0;
+  clearInterval(el._tm);
+  el._tm = setInterval(() => {
+    el.textContent += text[i++];
+    if (i >= text.length) {
+      clearInterval(el._tm);
+      el.classList.add("done");
+      cb && cb();
+    }
+  }, 28);
+}
+
+const chatBox = $("#chat");
+function scrollChat() { chatBox.scrollTop = chatBox.scrollHeight; }
+function addMsg(role, text, withTyping = false, cb) {
+  const div = document.createElement("div");
+  div.className = "msg " + (role === "user" ? "me" : "hole");
+  if (role !== "user") {
+    const av = document.createElement("div");
+    av.className = "avatar";
+    av.textContent = "🌱";
+    div.appendChild(av);
+  }
+  const say = document.createElement("div");
+  say.className = "say";
+  div.appendChild(say);
+  chatBox.appendChild(div);
+  if (withTyping) typewriter(say, text, () => { scrollChat(); cb && cb(); });
+  else say.textContent = text;
+  scrollChat();
+  return div;
+}
+function addHint(text) {
+  const h = document.createElement("div");
+  h.className = "chat-hint";
+  h.textContent = text;
+  chatBox.appendChild(h);
+  scrollChat();
+}
+function renderChat() {
+  chatBox.innerHTML = "";
+  const list = getChat();
+  if (!list.length) {
+    addMsg("assistant", "你来啦 🌷 我是住在这里的小树洞。想说什么都可以，想到哪说到哪，我都接着。");
+  } else {
+    list.forEach((m) => addMsg(m.role, m.content));
+  }
+}
+
+/* 拿一句回应：优先 AI，四道闸门全部通过才放行；任何失败都降级到语库 */
+async function getReply(text) {
+  /* 闸门③：个人每日限额 */
+  if (quotaLeft() <= 0) return { text: pickReply(text), fallback: "今天的陪聊额度用完啦，树洞用心底存的话回你" };
+  /* 闸门④：全站每日熔断（配置 quotaUrl 后生效） */
+  if (AI.quotaUrl) {
+    try {
+      const j = await (await fetch(AI.quotaUrl)).json();
+      if (!j.ok) return { text: pickReply(text), fallback: "今天全站的树洞在休息，用心底存的话回你" };
+    } catch {}
+  }
+  try {
+    const ctrl = new AbortController();
+    const tm = setTimeout(() => ctrl.abort(), 20000);
+    /* 闸门①：上下文截断，只带最近 10 轮 */
+    const history = getChat().slice(-AI.maxContext * 2).map((m) => ({ role: m.role, content: m.content }));
+    const res = await fetch(AI.url, {
+      method: "POST",
+      signal: ctrl.signal,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: AI.model, messages: [{ role: "system", content: SYSTEM_PROMPT }, ...history], temperature: 0.9, max_tokens: 800 }),
+    });
+    clearTimeout(tm);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    const content = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+    if (!content || !content.trim()) throw new Error("empty");
+    return { text: content.trim(), fallback: null };
+  } catch {
+    return { text: pickReply(text), fallback: "网络开小差了，树洞先用心底存的话抱抱你" };
+  }
+}
+
+async function sendMsg() {
+  const text = input.value.trim();
+  if (!text) { toast("说点什么吧 🌷"); input.focus(); return; }
+  input.value = "";
+  $("#counter").textContent = "0 / 300";
+
+  const chat = getChat();
+  chat.push({ role: "user", content: text, ts: Date.now() });
+  saveChat(chat);
+  addMsg("user", text);
+
+  $("#send").disabled = true;
+  sayBubble(pick(THINKING_WORDS), 20000);
+  setExp("exp-wow", 20000);
+  const typing = addMsg("assistant", "🌿 正在想……");
+  scrollChat();
+
+  const r = await getReply(text);
+  typing.remove();
+
+  const q = quota();
+  q.rounds += 1;
+  saveQuota(q);
+  updateQuota();
+  if (r.fallback) {
+    addHint("（" + r.fallback + "）");
+    sayBubble("唔，我先用心底存的话抱抱你 🫂");
+  }
+  const next = getChat();
+  next.push({ role: "assistant", content: r.text, ts: Date.now() });
+  saveChat(next);
+  addMsg("assistant", r.text, true, () => {
+    $("#send").disabled = false;
+    input.focus();
+    if (!r.fallback) {
+      sayBubble(pick(DONE_WORDS), 7000);
+      setExp("exp-love", 7000);
+    }
+  });
+  /* 这段对话聊满 12 轮后，温柔地提醒可以收束（每段对话只提醒一次） */
+  if (Math.floor(next.length / 2) === 12) {
+    setTimeout(() => addMsg("assistant", "我们聊了好多啦，你愿意说这么多，我很开心 🌷 要不要把最想说的话「放进树洞收藏」存起来？当然，想继续聊，我一直都在。", true), 1500);
+  }
+}
+$("#send").addEventListener("click", sendMsg);
+
+$("#keep").addEventListener("click", () => {
+  const text = input.value.trim();
+  if (!text) { toast("先写点什么，再放进树洞吧 🌙"); input.focus(); return; }
+  const mine = getMine();
+  mine.unshift({ id: Date.now() + "" + Math.floor(Math.random() * 999), text, reply: "", ts: Date.now() });
+  saveMine(mine);
+  updateBadge();
+
+  /* 若配置了云端，则同时把这条心事投递到公共树洞 */
+  if (isShared()) {
+    fetch(`${SHARED.url}/rest/v1/${SHARED.table}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: SHARED.key, Authorization: "Bearer " + SHARED.key, Prefer: "return=minimal" },
+      body: JSON.stringify({ content: text, reply: "", created_at: new Date().toISOString() }),
+    }).catch(() => toast("云端投递暂时失败，心事已保存在本地"));
+  }
+
+  input.value = "";
+  $("#counter").textContent = "0 / 300";
+  toast("收进树洞啦，我会替你好好收着 🌙");
+  sayBubble(pick(KEEP_WORDS));
+  setExp("exp-happy");
+});
+
+$("#clearChat").addEventListener("click", () => {
+  if (!confirm("要翻到新的一页吗？之前的对话会被收进时光里。")) return;
+  saveChat([]);
+  renderChat();
+  toast("新的一页 🌱");
+  sayBubble("新的一页，我还在哦 🌱");
+});
+
+/* ---------- 我的树洞 ---------- */
+function updateBadge() {
+  $("#mineBadge").textContent = getMine().length;
+}
+function renderMine() {
+  const list = $("#mineList");
+  const mine = getMine();
+  if (!mine.length) {
+    list.innerHTML = `<div class="empty">你的树洞还很安静。<br>去「倾诉」写下第一句心事吧，<br>我会替你收好，还你一句温柔的话。🌷</div>`;
+    return;
+  }
+  list.innerHTML = mine.map((e) => `
+    <div class="note">
+      <div class="note-text">${esc(e.text)}</div>
+      ${e.reply ? `<div class="note-reply"><div class="who">🌱 树洞的回应</div>${esc(e.reply)}</div>` : ""}
+      <div class="note-meta">
+        <span>${fmtDate(e.ts)}</span>
+        <button class="del" data-id="${e.id}">放下这条心事 ✕</button>
+      </div>
+    </div>`).join("");
+  list.querySelectorAll(".del").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (!confirm("要把这条心事放下来吗？放下后就收不回来了。")) return;
+      saveMine(getMine().filter((e) => e.id !== btn.dataset.id));
+      updateBadge();
+      renderMine();
+      toast("放下啦，会越来越轻的 ☁️");
+    });
+  });
+}
+
+/* ---------- 旅人的心事 ---------- */
+async function fetchShared() {
+  try {
+    const res = await fetch(`${SHARED.url}/rest/v1/${SHARED.table}?select=*&order=created_at.desc&limit=50`, {
+      headers: { apikey: SHARED.key, Authorization: "Bearer " + SHARED.key },
+    });
+    if (!res.ok) throw 0;
+    const rows = await res.json();
+    return rows.map((r) => ({ id: r.id, text: r.content, time: fmtDate(new Date(r.created_at).getTime()), hugs: 0, lamps: 0 }));
+  } catch { return null; }
+}
+async function renderOthers() {
+  const list = $("#othersList");
+  list.innerHTML = `<div class="empty">正在呼唤旅人们……</div>`;
+  let others = null;
+  if (isShared()) {
+    others = await fetchShared();
+    if (!others) toast("云端暂时连不上，稍后再来看看吧");
+  }
+  if (!others || !others.length) {
+    list.innerHTML = `<div class="empty">这里还很安静，还没有旅人留下心事。<br>等云端树洞点亮之后，所有访客的心事都会汇集到这里。<br>也许是你的那句话，会第一个暖到这里 🌱</div>`;
+    return;
+  }
+  const react = getReact();
+  list.innerHTML = others.map((e) => {
+    const r = react[e.id] || {};
+    const replies = r.replies || [];
+    return `
+    <div class="note">
+      <div class="note-text">${esc(e.text)}</div>
+      ${replies.length ? `<div class="user-replies">${replies.map((t) => `<div>💬 ${esc(t)}</div>`).join("")}</div>` : ""}
+      <div class="note-meta"><span>${esc(e.time)}</span></div>
+      <div class="reacts">
+        <button class="react ${r.hug ? "did" : ""}" data-id="${e.id}" data-k="hug">🤗 抱抱 ${e.hugs + (r.hug ? 1 : 0)}</button>
+        <button class="react ${r.lamp ? "did" : ""}" data-id="${e.id}" data-k="lamp">☀️ 小太阳 ${e.lamps + (r.lamp ? 1 : 0)}</button>
+        <button class="react" data-id="${e.id}" data-k="say">💬 回应一句</button>
+      </div>
+      <div class="mini-form" data-form="${e.id}">
+        <input maxlength="60" placeholder="留下一句温柔的话（60 字以内）">
+        <button data-send="${e.id}">送出</button>
+      </div>
+    </div>`;
+  }).join("");
+
+  list.querySelectorAll(".react").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.id, k = btn.dataset.k;
+      if (k === "say") {
+        const form = list.querySelector(`[data-form="${id}"]`);
+        form.classList.toggle("on");
+        form.querySelector("input").focus();
+        return;
+      }
+      const all = getReact();
+      const r = all[id] = all[id] || {};
+      if (r[k]) { toast("你已经送过啦，心意对方能感受到"); return; }
+      r[k] = true;
+      saveReact(all);
+      btn.classList.add("did");
+      renderOthers.refreshOne(btn, id, k);
+      if (k === "hug") { toast("一个拥抱已送达 🤗"); sayBubble(pick(HUG_WORDS)); setExp("exp-love"); }
+      else { toast("一颗小太阳挂上去啦 ☀️"); sayBubble(pick(LAMP_WORDS)); setExp("exp-happy"); }
+    });
+  });
+
+  list.querySelectorAll("[data-send]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.send;
+      const inputEl = list.querySelector(`[data-form="${id}"] input`);
+      const text = inputEl.value.trim();
+      if (!text) { toast("写一句再送出吧"); return; }
+      const all = getReact();
+      const r = all[id] = all[id] || {};
+      r.replies = r.replies || [];
+      r.replies.push(text);
+      saveReact(all);
+      toast("你的回应送出去了 💛");
+      sayBubble("你的温柔，TA 会看到的 💛");
+      renderOthers();
+    });
+  });
+}
+/* 点抱抱/小太阳后只更新当前按钮数字，不整页重绘 */
+renderOthers.refreshOne = (btn, id, k) => {
+  const all = getReact();
+  const r = all[id] || {};
+  btn.textContent = (k === "hug" ? "🤗 抱抱 " : "☀️ 小太阳 ") + (r[k] ? 1 : 0);
+};
+
+/* ---------- 启动 ---------- */
+updateBadge();
+renderMine();
+renderChat();
+updateQuota();
+startIdleCycle();
+tickIdle();
+</script>
+</body>
+</html>
