@@ -10,7 +10,7 @@
     --bg-top: #fff7ea;
     --bg-mid: #ffeeda;
     --bg-bottom: #ffe0d3;
-    --card: rgba(255, 255, 255, 0.78);
+    --card: rgba(255, 255, 255, 0.93);
     --card-border: rgba(255, 178, 145, 0.35);
     --text: #5c4a3d;
     --text-dim: #a6907f;
@@ -21,6 +21,8 @@
     --shadow: 0 8px 30px rgba(240, 150, 110, 0.18);
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  /* iOS：消除双击缩放延迟，让按钮一点就响应 */
+  button, textarea, input, .react { touch-action: manipulation; }
   html { scroll-behavior: smooth; }
   body {
     font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
@@ -272,7 +274,7 @@
     display: flex; justify-content: center; gap: 6px;
     margin: 34px 0 8px; padding: 6px;
     background: var(--card); border: 2px solid var(--card-border);
-    border-radius: 999px; backdrop-filter: blur(6px);
+    border-radius: 999px;
     box-shadow: var(--shadow);
   }
   nav button {
@@ -300,7 +302,7 @@
   .invite p { margin-top: 10px; color: var(--text-dim); font-size: 14px; }
   .paper {
     background: var(--card); border: 2px solid var(--card-border);
-    border-radius: 22px; padding: 6px; backdrop-filter: blur(6px);
+    border-radius: 22px; padding: 6px;
     box-shadow: var(--shadow);
     transition: box-shadow 0.3s, transform 0.3s;
   }
@@ -381,7 +383,7 @@
   .note {
     background: var(--card); border: 2px solid var(--card-border);
     border-radius: 20px; padding: 20px 22px; margin-top: 16px;
-    backdrop-filter: blur(6px); box-shadow: var(--shadow);
+    box-shadow: var(--shadow);
     animation: fadein 0.4s ease;
   }
   .note-text { font-size: 15.5px; line-height: 1.95; white-space: pre-wrap; word-break: break-word; color: #6e5138; }
@@ -849,6 +851,7 @@ function toast(msg) {
   t._tm = setTimeout(() => t.classList.remove("on"), 2400);
 }
 function fmtDate(ts) {
+  if (!ts || isNaN(ts)) return "某一天"; /* 老设备日期解析失败的兜底 */
   const d = new Date(ts), p = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
@@ -955,10 +958,13 @@ function renderChat() {
 async function getReply(text) {
   /* 闸门③：个人每日限额 */
   if (quotaLeft() <= 0) return { text: pickReply(text), fallback: "今天的陪聊额度用完啦，树洞用心底存的话回你" };
-  /* 闸门④：全站每日熔断（配置 quotaUrl 后生效） */
+  /* 闸门④：全站每日熔断（配置 quotaUrl 后生效）；3 秒查不到就放行，不阻塞聊天 */
   if (AI.quotaUrl) {
     try {
-      const j = await (await fetch(AI.quotaUrl)).json();
+      const ctrl = new AbortController();
+      const tm = setTimeout(() => ctrl.abort(), 3000);
+      const j = await (await fetch(AI.quotaUrl, { signal: ctrl.signal })).json();
+      clearTimeout(tm);
       if (!j.ok) return { text: pickReply(text), fallback: "今天全站的树洞在休息，用心底存的话回你" };
     } catch {}
   }
@@ -1095,25 +1101,36 @@ function renderMine() {
 }
 
 /* ---------- 旅人的心事 ---------- */
-async function fetchShared() {
-  try {
-    const res = await fetch(`${SHARED.url}/rest/v1/${SHARED.table}?select=*&order=created_at.desc&limit=50`, {
-      headers: { apikey: SHARED.key, Authorization: "Bearer " + SHARED.key },
-    });
-    if (!res.ok) throw 0;
-    const rows = await res.json();
-    return rows.map((r) => ({ id: r.id, text: r.content, time: fmtDate(new Date(r.created_at).getTime()), hugs: 0, lamps: 0 }));
-  } catch { return null; }
+async function fetchShared(timeoutMs = 8000) {
+  const tryOnce = async () => {
+    const ctrl = new AbortController();
+    const tm = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const res = await fetch(`${SHARED.url}/rest/v1/${SHARED.table}?select=*&order=created_at.desc&limit=50`, {
+        headers: { apikey: SHARED.key, Authorization: "Bearer " + SHARED.key },
+        signal: ctrl.signal,
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const rows = await res.json();
+      return rows.map((r) => ({ id: r.id, text: r.content, time: fmtDate(new Date(r.created_at).getTime()), hugs: 0, lamps: 0 }));
+    } finally { clearTimeout(tm); }
+  };
+  /* 失败自动重试一次（移动网络首次跨境请求常超时），两次都失败才放弃 */
+  try { return await tryOnce(); } catch {}
+  try { return await tryOnce(); } catch {}
+  return null;
 }
 async function renderOthers() {
   const list = $("#othersList");
   list.innerHTML = `<div class="empty">正在呼唤旅人们……</div>`;
   let others = null;
-  if (isShared()) {
-    others = await fetchShared();
-    if (!others) toast("云端暂时连不上，稍后再来看看吧");
+  if (isShared()) others = await fetchShared();
+  if (!others) {
+    /* 连不上云端：给出明确的提示和重试入口，绝不卡在加载态 */
+    list.innerHTML = `<div class="empty">云端暂时连不上，可能是网络开了小差 🍃<br><br><button class="btn btn-ghost" onclick="renderOthers()">再试一次 🔄</button></div>`;
+    return;
   }
-  if (!others || !others.length) {
+  if (!others.length) {
     list.innerHTML = `<div class="empty">这里还很安静，还没有旅人留下心事。<br>等云端树洞点亮之后，所有访客的心事都会汇集到这里。<br>也许是你的那句话，会第一个暖到这里 🌱</div>`;
     return;
   }
