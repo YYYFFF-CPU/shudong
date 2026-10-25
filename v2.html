@@ -436,6 +436,26 @@
     padding: 8px 13px; border-radius: 12px; background: #fffaf3;
     color: #a6907f; font-size: 13.5px; margin-top: 6px; line-height: 1.8;
   }
+  /* 我发布的心事：管理按钮 + 就地编辑 */
+  .own-tools { margin-top: 10px; display: flex; gap: 16px; }
+  .own-btn {
+    background: none; border: none; color: #c4ab97; font-size: 12.5px;
+    cursor: pointer; font-family: inherit; padding: 2px 0;
+  }
+  .own-btn:hover { color: var(--coral-deep); }
+  .edit-area {
+    width: 100%; min-height: 96px; padding: 10px 12px;
+    border: 2px dashed #ffd2bb; border-radius: 12px; background: #fffdf8;
+    color: #5c4a3d; font-family: inherit; font-size: 15px; line-height: 1.8;
+    outline: none; resize: vertical;
+  }
+  .edit-area:focus { border-color: var(--coral); }
+  .edit-row { display: flex; gap: 8px; margin-top: 8px; }
+  .mini-btn {
+    background: var(--accent-grad); color: #fff; border: none; border-radius: 999px;
+    padding: 6px 18px; font-size: 13px; cursor: pointer; font-family: inherit;
+  }
+  .mini-btn.ghost { background: #fff; color: var(--text-dim); border: 2px solid #ffe0cd; }
   .empty { text-align: center; color: var(--text-dim); font-size: 14px; padding: 60px 0; line-height: 2.2; }
   .toast {
     position: fixed; left: 50%; bottom: 34px; transform: translateX(-50%) translateY(20px);
@@ -535,7 +555,7 @@
     </div>
   </section>
 
-  <footer>树洞 · 愿你被这个世界温柔以待 <span style="opacity:0.45;font-size:10px">v2.1</span></footer>
+  <footer>树洞 · 愿你被这个世界温柔以待 <span style="opacity:0.45;font-size:10px">v2.2</span></footer>
 </div>
 
 <!-- 小团子吉祥物 -->
@@ -666,10 +686,19 @@ const DEFAULT_RESPONSES = [
 /* ---------- 本地数据 ---------- */
 const LS_MINE = "shudong_mine_v1";
 const LS_REACT = "shudong_react_v1";
+const LS_OWN = "shudong_own_v1"; /* 我发布的心事：云端id → 发布凭证（用于修改/删除） */
 const getMine = () => JSON.parse(localStorage.getItem(LS_MINE) || "[]");
 const saveMine = (a) => localStorage.setItem(LS_MINE, JSON.stringify(a));
 const getReact = () => JSON.parse(localStorage.getItem(LS_REACT) || "{}");
 const saveReact = (o) => localStorage.setItem(LS_REACT, JSON.stringify(o));
+const getOwn = () => JSON.parse(localStorage.getItem(LS_OWN) || "{}");
+const saveOwn = (o) => localStorage.setItem(LS_OWN, JSON.stringify(o));
+function genSecret() {
+  try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID().replace(/-/g, ""); } catch {}
+  let s = "";
+  for (let i = 0; i < 32; i++) s += Math.floor(Math.random() * 16).toString(16);
+  return s;
+}
 
 /* ---------- 背景：云朵与小心心 ---------- */
 (function paintSky() {
@@ -1038,27 +1067,46 @@ async function sendMsg() {
 }
 $("#send").addEventListener("click", sendMsg);
 
-$("#keep").addEventListener("click", () => {
+$("#keep").addEventListener("click", async () => {
   const text = input.value.trim();
   if (!text) { toast("先写点什么，再放进树洞吧 🌙"); input.focus(); return; }
   if (!confirm("放进树洞的心事会匿名出现在「旅人的心事」里，让路过的旅人看到、也能送你温暖。\n\n确定放进去吗？（只想自己收着的话，点「取消」——聊过的话都默默存在你自己的浏览器里）")) return;
+
+  /* 生成发布凭证：以后凭它修改/删除这条心事 */
+  const secret = genSecret();
+  let cloudOk = false;
+  if (isShared()) {
+    try {
+      const ctrl = new AbortController();
+      const tm = setTimeout(() => ctrl.abort(), 10000);
+      const res = await fetch(`${SHARED.url}/rest/v1/${SHARED.table}?select=id`, {
+        method: "POST",
+        signal: ctrl.signal,
+        headers: { "Content-Type": "application/json", apikey: SHARED.key, Authorization: "Bearer " + SHARED.key, Prefer: "return=representation" },
+        body: JSON.stringify({ content: text, reply: "", owner_secret: secret, created_at: new Date().toISOString() }),
+      });
+      clearTimeout(tm);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      if (data && data[0] && data[0].id) {
+        const own = getOwn();
+        own[data[0].id] = secret;
+        saveOwn(own);
+        cloudOk = true;
+      }
+    } catch {
+      toast("云端暂时连不上，心事先存在你自己的浏览器里 🍃");
+    }
+  }
+
   const mine = getMine();
-  mine.unshift({ id: Date.now() + "" + Math.floor(Math.random() * 999), text, reply: "", ts: Date.now() });
+  mine.unshift({ id: Date.now() + "" + Math.floor(Math.random() * 999), text, reply: "", ts: Date.now(), cloudOk });
   saveMine(mine);
   updateBadge();
 
-  /* 若配置了云端，则同时把这条心事投递到公共树洞 */
-  if (isShared()) {
-    fetch(`${SHARED.url}/rest/v1/${SHARED.table}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", apikey: SHARED.key, Authorization: "Bearer " + SHARED.key, Prefer: "return=minimal" },
-      body: JSON.stringify({ content: text, reply: "", created_at: new Date().toISOString() }),
-    }).catch(() => toast("云端投递暂时失败，心事已保存在本地"));
-  }
-
   input.value = "";
   $("#counter").textContent = "0 / 300";
-  toast("收进树洞啦，我会替你好好收着 🌙");
+  toast(cloudOk ? "收进树洞啦，随时可以修改或拿回它 🌙" : "已收好（仅本机可见）🌙");
   sayBubble(pick(KEEP_WORDS));
   setExp("exp-happy");
 });
@@ -1145,11 +1193,13 @@ async function renderOthers() {
     return;
   }
   const react = getReact();
+  const own = getOwn();
   list.innerHTML = others.map((e) => {
     const r = react[e.id] || {};
     return `
-    <div class="note">
+    <div class="note" data-note="${e.id}">
       <div class="note-text">${esc(e.text)}</div>
+      ${own[e.id] ? `<div class="own-tools"><button class="own-btn" data-edit="${e.id}">✏️ 修改</button><button class="own-btn" data-del="${e.id}">🗑 拿回这条心事</button></div>` : ""}
       ${e.replies.length ? `<div class="user-replies">${e.replies.map((t) => `<div>💬 ${t}</div>`).join("")}</div>` : ""}
       <div class="note-meta"><span>${esc(e.time)} · 收到 ${e.hugs} 个抱抱 · ${e.lamps} 颗小太阳${e.replies.length ? ` · ${e.replies.length} 句回应` : ""}</span></div>
       <div class="reacts">
@@ -1158,7 +1208,7 @@ async function renderOthers() {
         <button class="react" data-id="${e.id}" data-k="say">💬 回应一句</button>
       </div>
       <div class="mini-form" data-form="${e.id}">
-        <input maxlength="60" placeholder="留下一句温柔的话（60 字以内）">
+        <input maxlength="100" placeholder="留下一句温柔的话（100 字以内）">
         <button data-send="${e.id}">送出</button>
       </div>
     </div>`;
@@ -1229,6 +1279,85 @@ async function renderOthers() {
         toast("网络开小差，再试一次吧 🍃");
         btn.disabled = false;
       }
+    });
+  });
+
+  /* 我发布的心事：删除（出示发布凭证，云端校验后删除，回应随之消失） */
+  list.querySelectorAll("[data-del]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.del;
+      if (!confirm("确定把这条心事从树洞里拿走吗？\n它收到的回应也会一起消失。")) return;
+      btn.disabled = true;
+      try {
+        const ctrl = new AbortController();
+        const tm = setTimeout(() => ctrl.abort(), 10000);
+        const res = await fetch(`${SHARED.url}/rest/v1/rpc/delete_whisper`, {
+          method: "POST",
+          signal: ctrl.signal,
+          headers: { "Content-Type": "application/json", apikey: SHARED.key, Authorization: "Bearer " + SHARED.key },
+          body: JSON.stringify({ p_id: Number(id), p_secret: getOwn()[id] || "" }),
+        });
+        clearTimeout(tm);
+        if (!(await res.json())) throw new Error("rejected");
+        const own = getOwn();
+        delete own[id];
+        saveOwn(own);
+        toast("拿回来了，心里轻一点了吧 🍃");
+        await renderOthers();
+      } catch {
+        toast("网络开小差，再试一次吧 🍃");
+        btn.disabled = false;
+      }
+    });
+  });
+
+  /* 我发布的心事：就地修改 */
+  list.querySelectorAll("[data-edit]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.edit;
+      const note = list.querySelector(`[data-note="${id}"]`);
+      if (!note || note.querySelector(".edit-area")) return;
+      const textEl = note.querySelector(".note-text");
+      const ta = document.createElement("textarea");
+      ta.className = "edit-area";
+      ta.maxLength = 300;
+      ta.value = textEl.textContent;
+      const row = document.createElement("div");
+      row.className = "edit-row";
+      const save = document.createElement("button");
+      save.className = "mini-btn";
+      save.textContent = "保存";
+      const cancel = document.createElement("button");
+      cancel.className = "mini-btn ghost";
+      cancel.textContent = "取消";
+      row.appendChild(save);
+      row.appendChild(cancel);
+      textEl.replaceWith(ta);
+      ta.after(row);
+      ta.focus();
+      cancel.addEventListener("click", () => { ta.replaceWith(textEl); row.remove(); });
+      save.addEventListener("click", async () => {
+        const content = ta.value.trim();
+        if (!content) { toast("写点什么再保存吧 🌙"); return; }
+        save.disabled = true;
+        try {
+          const ctrl = new AbortController();
+          const tm = setTimeout(() => ctrl.abort(), 10000);
+          const res = await fetch(`${SHARED.url}/rest/v1/rpc/edit_whisper`, {
+            method: "POST",
+            signal: ctrl.signal,
+            headers: { "Content-Type": "application/json", apikey: SHARED.key, Authorization: "Bearer " + SHARED.key },
+            body: JSON.stringify({ p_id: Number(id), p_secret: getOwn()[id] || "", p_content: content }),
+          });
+          clearTimeout(tm);
+          if (!(await res.json())) throw new Error("rejected");
+          toast("改好啦 ✨");
+          await renderOthers();
+        } catch {
+          toast("网络开小差，再试一次吧 🍃");
+          save.disabled = false;
+        }
+      });
     });
   });
 }
