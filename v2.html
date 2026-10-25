@@ -619,7 +619,7 @@
     <div id="adminList"></div>
   </section>
 
-  <footer>树洞 · 愿你被这个世界温柔以待 <span style="opacity:0.45;font-size:10px">v3.0</span></footer>
+  <footer>树洞 · 愿你被这个世界温柔以待 <span style="opacity:0.45;font-size:10px">v3.1</span></footer>
 </div>
 
 <!-- 账号弹窗 -->
@@ -1356,7 +1356,15 @@ $("#keep").addEventListener("click", async () => {
     try {
       let headers = { "Content-Type": "application/json", apikey: SHARED.key, Authorization: "Bearer " + SHARED.key, Prefer: "return=representation" };
       const body = { content: text, reply: "", owner_secret: secret, created_at: new Date().toISOString() };
-      if (wantName && (await ensureToken())) {
+      if (wantName && !(await ensureToken())) {
+        /* 用户明确选择带昵称，凭证却失效：中止而非静默改成匿名 */
+        toast("登录已过期，请重新登录后再带昵称发布 🌿");
+        input.value = text;
+        $("#counter").textContent = `${text.length} / 300`;
+        openAuth();
+        return;
+      }
+      if (wantName) {
         headers = { ...headers, Authorization: "Bearer " + getAuth().access_token };
         body.author_name = authState.user.nickname || "旅人";
       }
