@@ -875,7 +875,11 @@ const LS_CHAT = "shudong_chat_v1";
 const LS_QUOTA = "shudong_quota_v1";
 const getChat = () => JSON.parse(localStorage.getItem(LS_CHAT) || "[]");
 const saveChat = (a) => localStorage.setItem(LS_CHAT, JSON.stringify(a.slice(-200)));
-const todayStr = () => new Date().toISOString().slice(0, 10);
+/* 用本地日期而非 UTC：让每日额度在本地午夜重置，而不是早上 8 点 */
+const todayStr = () => {
+  const d = new Date(), p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+};
 function quota() {
   const q = JSON.parse(localStorage.getItem(LS_QUOTA) || "{}");
   return q.date === todayStr() ? q : { date: todayStr(), rounds: 0, wrap: false };
@@ -1029,6 +1033,7 @@ $("#send").addEventListener("click", sendMsg);
 $("#keep").addEventListener("click", () => {
   const text = input.value.trim();
   if (!text) { toast("先写点什么，再放进树洞吧 🌙"); input.focus(); return; }
+  if (!confirm("放进树洞的心事会匿名出现在「旅人的心事」里，让路过的旅人看到、也能送你温暖。\n\n确定放进去吗？（只想自己收着的话，点「取消」——聊过的话都默默存在你自己的浏览器里）")) return;
   const mine = getMine();
   mine.unshift({ id: Date.now() + "" + Math.floor(Math.random() * 999), text, reply: "", ts: Date.now() });
   saveMine(mine);
