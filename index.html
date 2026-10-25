@@ -1106,13 +1106,21 @@ async function fetchShared(timeoutMs = 8000) {
     const ctrl = new AbortController();
     const tm = setTimeout(() => ctrl.abort(), timeoutMs);
     try {
-      const res = await fetch(`${SHARED.url}/rest/v1/${SHARED.table}?select=*&order=created_at.desc&limit=50`, {
+      /* 内嵌 replies：一次请求拿到心事 + 全部云端回应 + 真实计数 */
+      const res = await fetch(`${SHARED.url}/rest/v1/${SHARED.table}?select=id,content,created_at,hugs,lamps,replies(id,content,created_at)&order=created_at.desc&limit=50`, {
         headers: { apikey: SHARED.key, Authorization: "Bearer " + SHARED.key },
         signal: ctrl.signal,
       });
       if (!res.ok) throw new Error("HTTP " + res.status);
       const rows = await res.json();
-      return rows.map((r) => ({ id: r.id, text: r.content, time: fmtDate(new Date(r.created_at).getTime()), hugs: 0, lamps: 0 }));
+      return rows.map((r) => ({
+        id: r.id,
+        text: r.content,
+        time: fmtDate(new Date(r.created_at).getTime()),
+        hugs: r.hugs || 0,
+        lamps: r.lamps || 0,
+        replies: (r.replies || []).map((x) => esc(x.content)),
+      }));
     } finally { clearTimeout(tm); }
   };
   /* 失败自动重试一次（移动网络首次跨境请求常超时），两次都失败才放弃 */
@@ -1137,15 +1145,14 @@ async function renderOthers() {
   const react = getReact();
   list.innerHTML = others.map((e) => {
     const r = react[e.id] || {};
-    const replies = r.replies || [];
     return `
     <div class="note">
       <div class="note-text">${esc(e.text)}</div>
-      ${replies.length ? `<div class="user-replies">${replies.map((t) => `<div>💬 ${esc(t)}</div>`).join("")}</div>` : ""}
-      <div class="note-meta"><span>${esc(e.time)}</span></div>
+      ${e.replies.length ? `<div class="user-replies">${e.replies.map((t) => `<div>💬 ${t}</div>`).join("")}</div>` : ""}
+      <div class="note-meta"><span>${esc(e.time)} · 收到 ${e.hugs} 个抱抱 · ${e.lamps} 颗小太阳${e.replies.length ? ` · ${e.replies.length} 句回应` : ""}</span></div>
       <div class="reacts">
-        <button class="react ${r.hug ? "did" : ""}" data-id="${e.id}" data-k="hug">🤗 抱抱 ${e.hugs + (r.hug ? 1 : 0)}</button>
-        <button class="react ${r.lamp ? "did" : ""}" data-id="${e.id}" data-k="lamp">☀️ 小太阳 ${e.lamps + (r.lamp ? 1 : 0)}</button>
+        <button class="react ${r.hug ? "did" : ""}" data-id="${e.id}" data-k="hug">🤗 抱抱 ${e.hugs}</button>
+        <button class="react ${r.lamp ? "did" : ""}" data-id="${e.id}" data-k="lamp">☀️ 小太阳 ${e.lamps}</button>
         <button class="react" data-id="${e.id}" data-k="say">💬 回应一句</button>
       </div>
       <div class="mini-form" data-form="${e.id}">
@@ -1155,8 +1162,9 @@ async function renderOthers() {
     </div>`;
   }).join("");
 
+  /* 抱抱/小太阳：调云端原子自增 RPC，全站共享真实计数；本地只记"送过了"防重复 */
   list.querySelectorAll(".react").forEach((btn) => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
       const id = btn.dataset.id, k = btn.dataset.k;
       if (k === "say") {
         const form = list.querySelector(`[data-form="${id}"]`);
@@ -1167,38 +1175,61 @@ async function renderOthers() {
       const all = getReact();
       const r = all[id] = all[id] || {};
       if (r[k]) { toast("你已经送过啦，心意对方能感受到"); return; }
-      r[k] = true;
-      saveReact(all);
-      btn.classList.add("did");
-      renderOthers.refreshOne(btn, id, k);
-      if (k === "hug") { toast("一个拥抱已送达 🤗"); sayBubble(pick(HUG_WORDS)); setExp("exp-love"); }
-      else { toast("一颗小太阳挂上去啦 ☀️"); sayBubble(pick(LAMP_WORDS)); setExp("exp-happy"); }
+      btn.disabled = true;
+      try {
+        const ctrl = new AbortController();
+        const tm = setTimeout(() => ctrl.abort(), 8000);
+        const res = await fetch(`${SHARED.url}/rest/v1/rpc/react`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", apikey: SHARED.key, Authorization: "Bearer " + SHARED.key },
+          body: JSON.stringify({ p_whisper_id: Number(id), p_kind: k }),
+          signal: ctrl.signal,
+        });
+        clearTimeout(tm);
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        r[k] = true;
+        saveReact(all);
+        btn.classList.add("did");
+        btn.textContent = (k === "hug" ? "🤗 抱抱 " : "☀️ 小太阳 ") + ((parseInt(btn.textContent.replace(/\D/g, ""), 10) || 0) + 1);
+        if (k === "hug") { toast("一个拥抱已送达 🤗"); sayBubble(pick(HUG_WORDS)); setExp("exp-love"); }
+        else { toast("一颗小太阳挂上去啦 ☀️"); sayBubble(pick(LAMP_WORDS)); setExp("exp-happy"); }
+      } catch {
+        toast("网络开小差，再点一下试试 🍃");
+      } finally {
+        btn.disabled = false;
+      }
     });
   });
 
+  /* 回应一句：直接存进云端，所有访客都能看到 */
   list.querySelectorAll("[data-send]").forEach((btn) => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
       const id = btn.dataset.send;
       const inputEl = list.querySelector(`[data-form="${id}"] input`);
       const text = inputEl.value.trim();
       if (!text) { toast("写一句再送出吧"); return; }
-      const all = getReact();
-      const r = all[id] = all[id] || {};
-      r.replies = r.replies || [];
-      r.replies.push(text);
-      saveReact(all);
-      toast("你的回应送出去了 💛");
-      sayBubble("你的温柔，TA 会看到的 💛");
-      renderOthers();
+      btn.disabled = true;
+      try {
+        const ctrl = new AbortController();
+        const tm = setTimeout(() => ctrl.abort(), 8000);
+        const res = await fetch(`${SHARED.url}/rest/v1/replies`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", apikey: SHARED.key, Authorization: "Bearer " + SHARED.key, Prefer: "return=minimal" },
+          body: JSON.stringify({ whisper_id: Number(id), content: text }),
+          signal: ctrl.signal,
+        });
+        clearTimeout(tm);
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        toast("你的回应送出去了 💛");
+        sayBubble("你的温柔，TA 会看到的 💛");
+        await renderOthers(); /* 重新拉取，把云端回应显示出来 */
+      } catch {
+        toast("网络开小差，再试一次吧 🍃");
+        btn.disabled = false;
+      }
     });
   });
 }
-/* 点抱抱/小太阳后只更新当前按钮数字，不整页重绘 */
-renderOthers.refreshOne = (btn, id, k) => {
-  const all = getReact();
-  const r = all[id] || {};
-  btn.textContent = (k === "hug" ? "🤗 抱抱 " : "☀️ 小太阳 ") + (r[k] ? 1 : 0);
-};
 
 /* ---------- 启动 ---------- */
 updateBadge();
