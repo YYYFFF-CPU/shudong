@@ -888,11 +888,13 @@ function saveSession(j, email, nickname) {
     user: { id: j.user.id, email: email || j.user.email, nickname: nickname || (j.user.user_metadata && j.user.user_metadata.nickname) || "旅人" },
   });
 }
-$("#accountChip").addEventListener("click", openAuth);
-$("#authClose").addEventListener("click", closeAuth);
-$("#authMask").addEventListener("click", (e) => { if (e.target === $("#authMask")) closeAuth(); });
+/* 账号界面的事件接线：延迟到启动时执行（此时 $ 等工具已定义） */
+function initAuthUI() {
+  $("#accountChip").addEventListener("click", openAuth);
+  $("#authClose").addEventListener("click", closeAuth);
+  $("#authMask").addEventListener("click", (e) => { if (e.target === $("#authMask")) closeAuth(); });
 
-$("#btnSignup").addEventListener("click", async () => {
+  $("#btnSignup").addEventListener("click", async () => {
   const nickname = $("#regNick").value.trim() || "旅人";
   const email = $("#regEmail").value.trim();
   const password = $("#regPass").value;
@@ -970,6 +972,7 @@ $("#btnLogout").addEventListener("click", async () => {
   toast("下次再来，我一直在这儿 🌿");
   await afterAuthChange();
 });
+}
 
 /* ---------- 背景：云朵与小心心 ---------- */
 (function paintSky() {
@@ -1713,6 +1716,7 @@ async function renderAdmin() {
 }
 
 /* ---------- 启动 ---------- */
+initAuthUI();
 updateBadge();
 renderMine();
 renderChat();
