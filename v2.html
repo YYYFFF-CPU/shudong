@@ -1021,6 +1021,7 @@ function refreshChips() {
 }
 window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferredInstall = e; refreshChips(); });
 window.addEventListener("appinstalled", () => { deferredInstall = null; toast("装好啦！桌面见 🌙"); refreshChips(); });
+function initInstallNotifUI() {
 $("#installChip").addEventListener("click", async () => {
   if (deferredInstall) {
     deferredInstall.prompt();
@@ -1075,7 +1076,9 @@ $("#notifChip").addEventListener("click", async () => {
   }
   if (isIOS() && !isStandalone()) { refreshChips(); toast("iPhone 请先按引导添加到主屏幕 📲"); return; }
   await subscribePush();
-});
+  });
+}
+initInstallNotifUI();
 
 /* ---------- PWA Service Worker 注册 ---------- */
 if ("serviceWorker" in navigator) {
