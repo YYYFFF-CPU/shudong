@@ -1015,7 +1015,8 @@ async function openWxBind() {
   $("#wxErr").textContent = "";
   $("#wxQrBox").innerHTML = "<span style='color:#a6907f'>正在生成二维码……</span>";
   try {
-    const res = await authedApi("/push/wx/qr", { method: "GET" });
+    if (!(await ensureToken())) throw new Error("登录已过期，请重新登录");
+    const res = await fetch(API_BASE + "/push/wx/qr", { headers: { Authorization: "Bearer " + getAuth().access_token } });
     const j = await res.json();
     if (!j.ok) throw new Error(j.error || "生成失败");
     $("#wxQrBox").innerHTML = `<img src="${j.qrUrl}" alt="微信扫码绑定" style="width:210px;height:210px;border-radius:12px;border:2px solid #ffe0cd">`;
@@ -1028,7 +1029,12 @@ async function saveWxUid() {
   const uid = $("#wxUidInput").value.trim();
   if (!uid) { $("#wxErr").textContent = "请先扫码，把显示的 UID 粘贴到这里"; return; }
   try {
-    const res = await authedApi("/push/wx/bind", { method: "POST", body: JSON.stringify({ uid }) });
+    if (!(await ensureToken())) throw new Error("登录已过期，请重新登录");
+    const res = await fetch(API_BASE + "/push/wx/bind", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + getAuth().access_token },
+      body: JSON.stringify({ uid }),
+    });
     const j = await res.json();
     if (!j.ok) throw new Error(j.error || "绑定失败");
     $("#wxErr").textContent = "";
