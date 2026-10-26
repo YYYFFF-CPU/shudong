@@ -543,6 +543,7 @@
 </style>
 </head>
 <body>
+<script>window.__vapidPub = "BMTuokafry4zT7W2MolVYXg2W9NwEwCJgCdcbeyr2ETewAs4PFZRPWyrNLdnYkmzD2cHhwAQVET0_dh3u067xrc";</script>
 
 <div class="sky" id="sky">
   <div class="sun"></div>
@@ -562,6 +563,14 @@
     <div class="logo">树 洞</div>
     <div class="tagline">一个暖暖的小树洞 · 你来了呀</div>
     <button class="account-chip" id="accountChip">🌿 游客（点此登录）</button>
+    <div style="display:flex; gap:8px; justify-content:center; margin-top:8px; flex-wrap:wrap;">
+      <button class="account-chip" id="installChip" style="display:none">📲 安装到主屏幕</button>
+      <button class="account-chip" id="notifChip" style="display:none">🔔 开启通知</button>
+    </div>
+    <div id="iosGuide" class="care" style="display:none; margin-top:10px">
+      <b>添加到主屏幕（iPhone）：</b>点 Safari 底部的<b>分享按钮 □↑</b> → 选“添加到主屏幕”→ 右上角“添加”。
+      装好后再点上面的 🔔 按钮开启通知哦。
+    </div>
   </header>
 
   <nav>
@@ -625,7 +634,7 @@
     <div id="adminList"></div>
   </section>
 
-  <footer>树洞 · 愿你被这个世界温柔以待 <span style="opacity:0.45;font-size:10px">v4.0</span></footer>
+  <footer>树洞 · 愿你被这个世界温柔以待 <span style="opacity:0.45;font-size:10px">v5.0</span></footer>
 </div>
 
 <!-- 账号弹窗 -->
@@ -979,6 +988,84 @@ $("#btnLogout").addEventListener("click", async () => {
   await afterAuthChange();
 });
 }
+
+/* ---------- 安装到主屏幕 + 通知推送 ---------- */
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isStandalone = () => window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+let deferredInstall = null;
+
+function refreshChips() {
+  const chip = $("#installChip"), guide = $("#iosGuide");
+  if (deferredInstall) {
+    chip.style.display = ""; chip.textContent = "📲 一键安装到主屏幕";
+    guide.style.display = "none";
+  } else if (isIOS() && !isStandalone()) {
+    chip.style.display = ""; chip.textContent = "📲 怎么装到主屏幕？";
+    guide.style.display = "block";
+  } else {
+    chip.style.display = "none"; guide.style.display = "none";
+  }
+  /* 通知按钮显隐：支持推送的浏览器才显示 */
+  const nchip = $("#notifChip");
+  const canPush = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  if (!canPush) { nchip.style.display = "none"; return; }
+  const subscribed = localStorage.getItem("shudong_notif") === "on" && Notification.permission === "granted";
+  nchip.style.display = "";
+  nchip.textContent = subscribed ? "🔔 通知已开启" : "🔔 开启通知";
+  nchip.classList.toggle("logged", subscribed);
+}
+window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferredInstall = e; refreshChips(); });
+window.addEventListener("appinstalled", () => { deferredInstall = null; toast("装好啦！桌面见 🌙"); refreshChips(); });
+$("#installChip").addEventListener("click", async () => {
+  if (deferredInstall) {
+    deferredInstall.prompt();
+    const choice = await deferredInstall.userChoice;
+    if (choice.outcome === "accepted") { deferredInstall = null; refreshChips(); }
+  } else if (isIOS()) {
+    $("#iosGuide").scrollIntoView({ behavior: "smooth", block: "center" });
+    toast("按上面的三步就装好啦 🌷");
+  }
+});
+
+async function subscribePush() {
+  const perm = await Notification.requestPermission();
+  if (perm !== "granted") { toast("通知权限没有通过哦，浏览器设置里可以重新允许"); return false; }
+  const reg = await navigator.serviceWorker.ready;
+  /* base64url → Uint8Array */
+  const pubStr = window.__vapidPub.replace(/-/g, "+").replace(/_/g, "/");
+  const rawKey = Uint8Array.from(atob(pubStr + "===".slice((pubStr.length + 3) % 4)), (c) => c.charCodeAt(0));
+  let sub;
+  try {
+    sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: rawKey,
+    });
+  } catch (e) {
+    if (isIOS() && !isStandalone()) { toast("iPhone 需要先添加到主屏幕，再开通知哦 📲"); refreshChips(); }
+    else toast("订阅推送失败了，稍后再试 🍃");
+    return false;
+  }
+  const j = sub.toJSON();
+  const a = getAuth();
+  const res = await fetch(API_BASE + "/push/subscribe", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(a && (await ensureToken()) ? { Authorization: "Bearer " + getAuth().access_token } : {}) },
+    body: JSON.stringify({ endpoint: j.endpoint, keys: j.keys }),
+  }).catch(() => null);
+  if (!res || !(await res.json()).ok) { toast("开启失败，稍后再试 🍃"); return false; }
+  localStorage.setItem("shudong_notif", "on");
+  toast("通知开启啦！有人回应你的心事，手机会提醒你 🔔");
+  refreshChips();
+  return true;
+}
+$("#notifChip").addEventListener("click", async () => {
+  if (Notification.permission === "granted" && localStorage.getItem("shudong_notif") === "on") {
+    toast("通知已经开着啦 🔔");
+    return;
+  }
+  if (isIOS() && !isStandalone()) { refreshChips(); toast("iPhone 请先按引导添加到主屏幕 📲"); return; }
+  await subscribePush();
+});
 
 /* ---------- PWA Service Worker 注册 ---------- */
 if ("serviceWorker" in navigator) {
@@ -1595,11 +1682,11 @@ async function renderOthers() {
       try {
         const ctrl = new AbortController();
         const tm = setTimeout(() => ctrl.abort(), 8000);
-        const res = await fetch(`${SHARED.url}/rest/v1/replies`, {
+        const res = await fetch(API_BASE + "/reply", {
           method: "POST",
-          headers: { "Content-Type": "application/json", apikey: SHARED.key, Authorization: "Bearer " + SHARED.key, Prefer: "return=minimal" },
-          body: JSON.stringify({ whisper_id: Number(id), content: text }),
           signal: ctrl.signal,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ whisper_id: Number(id), content: text }),
         });
         clearTimeout(tm);
         if (!res.ok) throw new Error("HTTP " + res.status);
@@ -1806,6 +1893,7 @@ setInterval(() => {
 
 /* ---------- 启动 ---------- */
 initAuthUI();
+refreshChips();
 updateBadge();
 renderMine();
 renderChat();
