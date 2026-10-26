@@ -634,7 +634,7 @@
     <div id="adminList"></div>
   </section>
 
-  <footer>树洞 · 愿你被这个世界温柔以待 <span style="opacity:0.45;font-size:10px">v5.0</span></footer>
+  <footer>树洞 · 愿你被这个世界温柔以待 <span style="opacity:0.45;font-size:10px">v5.1</span></footer>
 </div>
 
 <!-- 账号弹窗 -->
@@ -1003,14 +1003,19 @@ function refreshChips() {
     chip.style.display = ""; chip.textContent = "📲 怎么装到主屏幕？";
     guide.style.display = "block";
   } else {
-    chip.style.display = "none"; guide.style.display = "none";
+    /* 不支持一键安装的浏览器（国产壳浏览器等）：常显按钮，点击给菜单指引 */
+    chip.style.display = ""; chip.textContent = "📲 添加到主屏幕";
+    guide.style.display = "none";
   }
-  /* 通知按钮显隐：支持推送的浏览器才显示 */
   const nchip = $("#notifChip");
   const canPush = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
-  if (!canPush) { nchip.style.display = "none"; return; }
-  const subscribed = localStorage.getItem("shudong_notif") === "on" && Notification.permission === "granted";
   nchip.style.display = "";
+  if (!canPush) {
+    nchip.textContent = "🔔 此浏览器不支持通知";
+    nchip.classList.remove("logged");
+    return;
+  }
+  const subscribed = localStorage.getItem("shudong_notif") === "on" && Notification.permission === "granted";
   nchip.textContent = subscribed ? "🔔 通知已开启" : "🔔 开启通知";
   nchip.classList.toggle("logged", subscribed);
 }
@@ -1024,6 +1029,8 @@ $("#installChip").addEventListener("click", async () => {
   } else if (isIOS()) {
     $("#iosGuide").scrollIntoView({ behavior: "smooth", block: "center" });
     toast("按上面的三步就装好啦 🌷");
+  } else {
+    toast("在浏览器菜单里找「添加到主屏幕」或「添加至桌面」；找不到说明此浏览器不支持，请用 Chrome/Safari 打开 🍃");
   }
 });
 
@@ -1059,6 +1066,9 @@ async function subscribePush() {
   return true;
 }
 $("#notifChip").addEventListener("click", async () => {
+  const canPush = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  if (!canPush) { toast("当前浏览器不支持网页通知，请用 Safari 或 Chrome 打开本站 🍃"); return; }
+  if (Notification.permission === "denied") { toast("通知权限被拒绝过，请在浏览器设置里为本站重新允许 🔔"); return; }
   if (Notification.permission === "granted" && localStorage.getItem("shudong_notif") === "on") {
     toast("通知已经开着啦 🔔");
     return;
