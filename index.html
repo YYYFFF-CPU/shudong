@@ -647,6 +647,11 @@
     <div id="wxQrBox" style="min-height:180px; display:flex; align-items:center; justify-content:center;">
       <span style="color:#a6907f">正在生成二维码……</span>
     </div>
+    <p class="auth-tip" style="text-align:left">扫码关注后，WxPusher 会显示你的 <b>UID</b>（UID_ 开头）。把它粘贴到下面完成绑定：</p>
+    <div style="display:flex; gap:8px">
+      <input id="wxUidInput" maxlength="40" placeholder="UID_xxxxxxxx" style="flex:1; padding:10px 12px; border:2px solid #ffe0cd; border-radius:12px; font-size:14px; outline:none; color:#5c4a3d; font-family:inherit">
+      <button class="mini-btn" id="wxUidSave">绑定</button>
+    </div>
     <p class="auth-err" id="wxErr"></p>
     <div class="auth-actions"><button class="btn btn-ghost" id="wxRefresh">刷新二维码</button></div>
   </div>
@@ -1018,6 +1023,21 @@ async function openWxBind() {
   } catch (e) {
     $("#wxQrBox").innerHTML = "";
     $("#wxErr").textContent = e.message.includes("未配置") ? "微信通知还在配置中，稍后再来～" : ("生成二维码失败：" + e.message);
+  }
+}
+async function saveWxUid() {
+  const uid = $("#wxUidInput").value.trim();
+  if (!uid) { $("#wxErr").textContent = "请先扫码，把显示的 UID 粘贴到这里"; return; }
+  try {
+    const res = await authedApi("/push/wx/bind", { method: "POST", body: JSON.stringify({ uid }) });
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error || "绑定失败");
+    $("#wxErr").textContent = "";
+    $("#wxUidInput").value = "";
+    toast("微信通知绑定成功！有人回应你的心事，微信会提醒你 🔔");
+    $("#wxMask").style.display = "none";
+  } catch (e) {
+    $("#wxErr").textContent = friendlyAuthErr(e.message);
   }
 }
 
@@ -1943,6 +1963,8 @@ try {
   $("#wxChip").addEventListener("click", openWxBind);
   $("#wxClose").addEventListener("click", () => $("#wxMask").style.display = "none");
   $("#wxRefresh").addEventListener("click", openWxBind);
+  $("#wxUidSave").addEventListener("click", saveWxUid);
+  $("#wxUidInput").addEventListener("keydown", (e) => { if (e.key === "Enter") saveWxUid(); });
   refreshChips();
   updateBadge();
   renderMine();
