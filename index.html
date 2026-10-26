@@ -1506,7 +1506,7 @@ $("#keep").addEventListener("click", async () => {
   }
 
   const mine = getMine();
-  mine.unshift({ id: Date.now() + "" + Math.floor(Math.random() * 999), text, reply: "", ts: Date.now(), cloudOk });
+  mine.unshift({ id: Date.now() + "" + Math.floor(Math.random() * 999), text, reply: "", ts: Date.now(), cloudId: cloudOk ? Number(cloudId) : null });
   saveMine(mine);
   updateBadge();
 
@@ -1525,33 +1525,156 @@ $("#clearChat").addEventListener("click", () => {
   sayBubble("新的一页，我还在哦 🌱");
 });
 
-/* ---------- 我的树洞 ---------- */
+/* ---------- 我的树洞（云端同步版：显示他人回应、就地改删、自动同步心事墙） ---------- */
 function updateBadge() {
   $("#mineBadge").textContent = getMine().length;
 }
-function renderMine() {
+function renderMine() { return renderMineAsync(); }
+async function renderMineAsync() {
   const list = $("#mineList");
-  const mine = getMine();
-  if (!mine.length) {
-    list.innerHTML = `<div class="empty">你的树洞还很安静。<br>去「倾诉」写下第一句心事吧，<br>我会替你收好，还你一句温柔的话。🌷</div>`;
+  const local = getMine();
+
+  /* 云端拉取：我发布的所有心事（账号绑定的 + 凭证绑定的），连带他人回应 */
+  let cloudCards = [];
+  if (isShared()) {
+    const ownIds = Object.keys(getOwn()).map(Number);
+    const ids = [...new Set([...authState.myIds.map(Number), ...ownIds])];
+    if (ids.length) {
+      try {
+        const headers = { apikey: SHARED.key, Authorization: "Bearer " + SHARED.key };
+        if (authState.user && (await ensureToken())) headers.Authorization = "Bearer " + getAuth().access_token;
+        const ctrl = new AbortController();
+        const tm = setTimeout(() => ctrl.abort(), 8000);
+        const res = await fetch(`${SHARED.url}/rest/v1/${SHARED.table}?select=id,content,created_at,hugs,lamps,replies(id,content,created_at)&id=in.(${ids.join(",")})&order=created_at.desc`, {
+          headers, signal: ctrl.signal,
+        });
+        clearTimeout(tm);
+        if (res.ok) {
+          cloudCards = (await res.json()).map((r) => ({
+            kind: "cloud",
+            mode: ownIds.includes(r.id) ? "secret" : "auth",
+            id: r.id,
+            text: r.content,
+            time: fmtDate(new Date(r.created_at).getTime()),
+            hugs: r.hugs || 0,
+            lamps: r.lamps || 0,
+            replies: (r.replies || []).map((x) => ({ id: x.id, text: x.content, ts: new Date(x.created_at).getTime() || 0 })),
+          }));
+        }
+      } catch {}
+    }
+  }
+
+  /* 同步规则：云端有的以云端为准；云端已删除的本机条目自动移除；从未上云的本机条目保留并标注 */
+  const cloudIds = new Set(cloudCards.map((c) => c.id));
+  const localOnly = [];
+  const keptLocal = [];
+  for (const e of local) {
+    if (e.cloudId && cloudIds.has(e.cloudId)) continue;
+    if (e.cloudId && isShared()) continue;
+    localOnly.push({ kind: "local", id: e.id, text: e.text, time: fmtDate(e.ts) });
+    keptLocal.push(e);
+  }
+  if (keptLocal.length !== local.length) saveMine(keptLocal);
+
+  const cards = [...cloudCards, ...localOnly];
+  $("#mineBadge").textContent = cards.length;
+
+  if (!cards.length) {
+    list.innerHTML = `<div class="empty">你的树洞还很安静。<br>去「倾诉」写下心事，或把心事放进树洞收藏。<br>我会替你收好，还你一句温柔的话。🌷</div>`;
     return;
   }
-  list.innerHTML = mine.map((e) => `
-    <div class="note">
-      <div class="note-text">${esc(e.text)}</div>
-      ${e.reply ? `<div class="note-reply"><div class="who">🌱 树洞的回应</div>${esc(e.reply)}</div>` : ""}
-      <div class="note-meta">
-        <span>${fmtDate(e.ts)}</span>
-        <button class="del" data-id="${e.id}">放下这条心事 ✕</button>
-      </div>
-    </div>`).join("");
-  list.querySelectorAll(".del").forEach((btn) => {
+
+  list.innerHTML = cards.map((c) => {
+    const isCloud = c.kind === "cloud";
+    return `
+    <div class="note" data-mine-kind="${c.kind}" data-mine-id="${c.id}">
+      <div class="note-text">${esc(c.text)}</div>
+      <div class="own-tools"><button class="own-btn" data-medit="${c.kind}:${c.id}">✏️ 修改</button><button class="own-btn" data-mdel="${c.kind}:${c.id}">${isCloud ? "🗑 拿回这条心事" : "🗑 删除"}</button></div>
+      ${isCloud && c.replies.length ? `<div class="user-replies">${c.replies.map((t) => `<div>💬 ${esc(t.text)}</div>`).join("")}</div>` : ""}
+      ${!isCloud && c.reply ? `<div class="note-reply"><div class="who">🌱 树洞的回应</div>${esc(c.reply)}</div>` : ""}
+      <div class="note-meta"><span>${esc(c.time)}${isCloud ? ` · 收到 ${c.hugs} 个抱抱 · ${c.lamps} 颗小太阳${c.replies.length ? ` · ${c.replies.length} 句回应` : ""}` : " · 仅保存在本机"}</span></div>
+    </div>`;
+  }).join("");
+
+  /* 修改（三种模式：云端凭证 / 云端账号 / 纯本机） */
+  list.querySelectorAll("[data-medit]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      if (!confirm("要把这条心事放下来吗？放下后就收不回来了。")) return;
-      saveMine(getMine().filter((e) => e.id !== btn.dataset.id));
-      updateBadge();
-      renderMine();
-      toast("放下啦，会越来越轻的 ☁️");
+      const [kind, id] = btn.dataset.medit.split(":");
+      const note = list.querySelector(`[data-mine-kind="${kind}"][data-mine-id="${id}"]`);
+      if (!note || note.querySelector(".edit-area")) return;
+      const textEl = note.querySelector(".note-text");
+      const ta = document.createElement("textarea");
+      ta.className = "edit-area"; ta.maxLength = 300; ta.value = textEl.textContent;
+      const row = document.createElement("div");
+      row.className = "edit-row";
+      const save = document.createElement("button"); save.className = "mini-btn"; save.textContent = "保存";
+      const cancel = document.createElement("button"); cancel.className = "mini-btn ghost"; cancel.textContent = "取消";
+      row.appendChild(save); row.appendChild(cancel);
+      textEl.replaceWith(ta); ta.after(row); ta.focus();
+      cancel.addEventListener("click", () => { ta.replaceWith(textEl); row.remove(); });
+      save.addEventListener("click", async () => {
+        const content = ta.value.trim();
+        if (!content) { toast("写点什么再保存吧 🌙"); return; }
+        save.disabled = true;
+        try {
+          if (kind === "secret") {
+            const ctrl = new AbortController(); const tm = setTimeout(() => ctrl.abort(), 10000);
+            const res = await fetch(`${SHARED.url}/rest/v1/rpc/edit_whisper`, {
+              method: "POST", signal: ctrl.signal,
+              headers: { "Content-Type": "application/json", apikey: SHARED.key, Authorization: "Bearer " + SHARED.key },
+              body: JSON.stringify({ p_id: Number(id), p_secret: getOwn()[id] || "", p_content: content }),
+            });
+            clearTimeout(tm);
+            if ((await res.json()) !== true) throw new Error("rejected");
+          } else if (kind === "auth") {
+            const res = await authedApi(`/rest/v1/whispers?id=eq.${id}`, { method: "PATCH", body: JSON.stringify({ content }) });
+            if (!res.ok) throw new Error("HTTP " + res.status);
+          } else {
+            const mine = getMine();
+            const e = mine.find((x) => x.id === id);
+            if (e) e.text = content;
+            saveMine(mine);
+          }
+          toast("改好啦 ✨（心事墙已同步）");
+          await renderMineAsync();
+        } catch {
+          toast("网络开小差，再试一次吧 🍃");
+          save.disabled = false;
+        }
+      });
+    });
+  });
+
+  /* 删除/拿回 */
+  list.querySelectorAll("[data-mdel]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const [kind, id] = btn.dataset.mdel.split(":");
+      if (!confirm(kind === "local" ? "删除这条仅保存在本机的心事？" : "确定把这条心事从树洞里拿走吗？\n它收到的回应也会一起消失，心事墙同步移除。")) return;
+      btn.disabled = true;
+      try {
+        if (kind === "secret") {
+          const ctrl = new AbortController(); const tm = setTimeout(() => ctrl.abort(), 10000);
+          const res = await fetch(`${SHARED.url}/rest/v1/rpc/delete_whisper`, {
+            method: "POST", signal: ctrl.signal,
+            headers: { "Content-Type": "application/json", apikey: SHARED.key, Authorization: "Bearer " + SHARED.key },
+            body: JSON.stringify({ p_id: Number(id), p_secret: getOwn()[id] || "" }),
+          });
+          clearTimeout(tm);
+          if ((await res.json()) !== true) throw new Error("rejected");
+          const own = getOwn(); delete own[id]; saveOwn(own);
+        } else if (kind === "auth") {
+          const res = await authedApi(`/rest/v1/whispers?id=eq.${id}`, { method: "DELETE" });
+          if (!res.ok) throw new Error("HTTP " + res.status);
+        } else {
+          saveMine(getMine().filter((x) => x.id !== id));
+        }
+        toast("拿回来了，心里轻一点了吧 🍃（心事墙已同步）");
+        await renderMineAsync();
+      } catch {
+        toast("网络开小差，再试一次吧 🍃");
+        btn.disabled = false;
+      }
     });
   });
 }
