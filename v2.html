@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>树洞 · 一个暖暖的小树洞</title>
 <meta name="description" content="一个软软的小树洞。写下心事，收下一句温柔的回应，也听听别的旅人在说什么。">
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#ffeeda">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="树洞">
 <style>
   :root {
     --bg-top: #fff7ea;
@@ -561,7 +567,7 @@
   <nav>
     <button data-view="write" class="on">🌷 倾诉</button>
     <button data-view="mine">我的树洞<span class="badge" id="mineBadge">0</span></button>
-    <button data-view="others">旅人的心事</button>
+    <button data-view="others">旅人的心事<span class="badge" id="notifBadge" style="display:none"></span></button>
     <button data-view="admin" id="adminTab" style="display:none">⚙️ 管理</button>
   </nav>
 
@@ -619,7 +625,7 @@
     <div id="adminList"></div>
   </section>
 
-  <footer>树洞 · 愿你被这个世界温柔以待 <span style="opacity:0.45;font-size:10px">v3.3</span></footer>
+  <footer>树洞 · 愿你被这个世界温柔以待 <span style="opacity:0.45;font-size:10px">v4.0</span></footer>
 </div>
 
 <!-- 账号弹窗 -->
@@ -974,7 +980,12 @@ $("#btnLogout").addEventListener("click", async () => {
 });
 }
 
-/* ---------- 背景：云朵与小心心 ---------- */
+/* ---------- PWA Service Worker 注册 ---------- */
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./sw.js").catch(() => {});
+}
+
+/* ---------- 背景生成 ---------- */
 (function paintSky() {
   const sky = document.getElementById("sky");
   const cloudSpots = [
@@ -1174,7 +1185,7 @@ document.querySelectorAll("nav button").forEach((btn) => {
     document.querySelectorAll("section.view").forEach((v) => v.classList.remove("on"));
     $("#view-" + btn.dataset.view).classList.add("on");
     if (btn.dataset.view === "mine") renderMine();
-    if (btn.dataset.view === "others") renderOthers();
+    if (btn.dataset.view === "others") { renderOthers(); markSeen(); }
     if (btn.dataset.view === "admin") renderAdmin();
   });
 });
@@ -1442,27 +1453,44 @@ function renderMine() {
 }
 
 /* ---------- 旅人的心事 ---------- */
+let lastRows = []; /* 最近一次心事数据（原始未转义，渲染时统一 esc） */
+
 async function fetchShared(timeoutMs = 8000) {
   const tryOnce = async () => {
     const ctrl = new AbortController();
     const tm = setTimeout(() => ctrl.abort(), timeoutMs);
     try {
       /* 内嵌 replies：一次请求拿到心事 + 全部云端回应 + 真实计数 + 作者昵称 */
+      const headers = { apikey: SHARED.key, Authorization: "Bearer " + SHARED.key };
+      const etag = localStorage.getItem("shudong_etag");
+      if (etag) headers["If-None-Match"] = etag;
       const res = await fetch(`${SHARED.url}/rest/v1/${SHARED.table}?select=id,content,created_at,hugs,lamps,author_name,replies(id,content,created_at)&order=created_at.desc&limit=50`, {
-        headers: { apikey: SHARED.key, Authorization: "Bearer " + SHARED.key },
-        signal: ctrl.signal,
+        headers, signal: ctrl.signal,
       });
+      clearTimeout(tm);
+      if (res.status === 304) {
+        /* 数据没变：直接用缓存，零流量 */
+        lastRows = JSON.parse(localStorage.getItem("shudong_rows") || "[]");
+        return lastRows;
+      }
       if (!res.ok) throw new Error("HTTP " + res.status);
       const rows = await res.json();
-      return rows.map((r) => ({
+      const mapped = rows.map((r) => ({
         id: r.id,
         text: r.content,
         time: fmtDate(new Date(r.created_at).getTime()),
         hugs: r.hugs || 0,
         lamps: r.lamps || 0,
         author: r.author_name || "",
-        replies: (r.replies || []).map((x) => ({ id: x.id, text: esc(x.content) })),
+        replies: (r.replies || []).map((x) => ({ id: x.id, text: x.content, ts: new Date(x.created_at).getTime() || 0 })),
       }));
+      lastRows = mapped;
+      const et = res.headers.get("etag");
+      if (et) {
+        localStorage.setItem("shudong_etag", et);
+        localStorage.setItem("shudong_rows", JSON.stringify(mapped));
+      }
+      return mapped;
     } finally { clearTimeout(tm); }
   };
   /* 失败自动重试一次（移动网络首次跨境请求常超时），两次都失败才放弃 */
@@ -1494,7 +1522,7 @@ async function renderOthers() {
     <div class="note" data-note="${e.id}">
       <div class="note-text">${esc(e.text)}</div>
       ${isMine(e.id) ? `<div class="own-tools"><button class="own-btn" data-edit="${e.id}">✏️ 修改</button><button class="own-btn" data-del="${e.id}">🗑 拿回这条心事</button></div>` : ""}
-      ${e.replies.length ? `<div class="user-replies">${e.replies.map((t) => `<div>💬 ${t.text}</div>`).join("")}</div>` : ""}
+      ${e.replies.length ? `<div class="user-replies">${e.replies.map((t) => `<div>💬 ${esc(t.text)}</div>`).join("")}</div>` : ""}
       <div class="note-meta"><span>${who} · ${esc(e.time)} · 收到 ${e.hugs} 个抱抱 · ${e.lamps} 颗小太阳${e.replies.length ? ` · ${e.replies.length} 句回应` : ""}</span></div>
       <div class="reacts">
         <button class="react ${r.hug ? "did" : ""}" data-id="${e.id}" data-k="hug">🤗 抱抱 ${e.hugs}</button>
@@ -1554,6 +1582,15 @@ async function renderOthers() {
       const inputEl = list.querySelector(`[data-form="${id}"] input`);
       const text = inputEl.value.trim();
       if (!text) { toast("写一句再送出吧"); return; }
+      /* 限频：15 秒一条 + 每天最多 30 条（本机维度） */
+      const now = Date.now();
+      if (now - Number(localStorage.getItem("shudong_last_reply") || 0) < 15000) {
+        toast("回应太频繁啦，歇几秒再说 🍃"); return;
+      }
+      const today = todayStr();
+      const rc = JSON.parse(localStorage.getItem("shudong_replycnt") || "{}");
+      const cnt = rc.date === today ? rc.n : 0;
+      if (cnt >= 30) { toast("今天的回应已经很多啦，明天再说吧 🌙"); return; }
       btn.disabled = true;
       try {
         const ctrl = new AbortController();
@@ -1566,6 +1603,8 @@ async function renderOthers() {
         });
         clearTimeout(tm);
         if (!res.ok) throw new Error("HTTP " + res.status);
+        localStorage.setItem("shudong_last_reply", String(now));
+        localStorage.setItem("shudong_replycnt", JSON.stringify({ date: today, n: cnt + 1 }));
         toast("你的回应送出去了 💛");
         sayBubble("你的温柔，TA 会看到的 💛");
         await renderOthers(); /* 重新拉取，把云端回应显示出来 */
@@ -1723,6 +1762,48 @@ async function renderAdmin() {
   });
 }
 
+/* ---------- 通知角标：新心事 + 自己心事的最新回应 ---------- */
+const LS_SEEN = "shudong_seen_v1";
+const getSeen = () => JSON.parse(localStorage.getItem(LS_SEEN) || '{"w":0,"r":0}');
+function myWhisperIdSet() {
+  return new Set([...authState.myIds.map(Number), ...Object.keys(getOwn()).map(Number)]);
+}
+function computeNotif(rows) {
+  const seen = getSeen();
+  const mySet = myWhisperIdSet();
+  let newWhispers = 0, repliesForMe = 0;
+  rows.forEach((r) => {
+    if (r.id > (seen.w || 0)) newWhispers++;
+    if (mySet.has(r.id)) r.replies.forEach((t) => { if ((t.ts || 0) > (seen.r || 0)) repliesForMe++; });
+  });
+  return { newWhispers, repliesForMe };
+}
+function updateNotifBadge() {
+  if (!lastRows.length) return;
+  const n = computeNotif(lastRows);
+  const total = n.newWhispers + n.repliesForMe;
+  const b = $("#notifBadge");
+  if (!b) return;
+  b.textContent = total > 99 ? "99+" : String(total);
+  b.style.display = total > 0 ? "" : "none";
+}
+function markSeen() {
+  const mySet = myWhisperIdSet();
+  let maxW = 0, maxR = 0;
+  lastRows.forEach((r) => {
+    maxW = Math.max(maxW, r.id);
+    if (mySet.has(r.id)) r.replies.forEach((t) => { maxR = Math.max(maxR, t.ts || 0); });
+  });
+  localStorage.setItem(LS_SEEN, JSON.stringify({ w: maxW, r: maxR }));
+  updateNotifBadge();
+}
+/* 后台轻轮询：页面可见时每 120 秒刷新一次角标（量级对云端毫无压力） */
+setInterval(() => {
+  if (document.hidden || !isShared()) return;
+  if (document.querySelector("#view-others.on")) return; /* 正看着心事墙就不用刷 */
+  fetchShared().then((rows) => { if (rows) { lastRows = rows; updateNotifBadge(); } });
+}, 120000);
+
 /* ---------- 启动 ---------- */
 initAuthUI();
 updateBadge();
@@ -1732,6 +1813,8 @@ updateQuota();
 afterAuthChange();
 startIdleCycle();
 tickIdle();
+/* 启动即拉一次心事，点亮通知角标 */
+if (isShared()) fetchShared().then((rows) => { if (rows) { lastRows = rows; updateNotifBadge(); } });
 </script>
 </body>
 </html>
