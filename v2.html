@@ -565,12 +565,11 @@
     <button class="account-chip" id="accountChip">🌿 游客（点此登录）</button>
     <div style="display:flex; gap:8px; justify-content:center; margin-top:8px; flex-wrap:wrap;">
       <button class="account-chip" id="installChip" style="display:none">📲 安装到主屏幕</button>
-      <button class="account-chip" id="notifChip" style="display:none">🔔 开启通知</button>
       <button class="account-chip" id="wxChip" style="display:none">💬 微信通知绑定</button>
     </div>
     <div id="iosGuide" class="care" style="display:none; margin-top:10px">
       <b>添加到主屏幕（iPhone）：</b>点 Safari 底部的<b>分享按钮 □↑</b> → 选“添加到主屏幕”→ 右上角“添加”。
-      装好后再点上面的 🔔 按钮开启通知哦。
+      装好后打开树洞，再点下面的「💬 微信通知绑定」按钮绑定微信通知哦。
     </div>
   </header>
 
@@ -1059,17 +1058,8 @@ function refreshChips() {
     chip.style.display = ""; chip.textContent = "📲 添加到主屏幕";
     guide.style.display = "none";
   }
-  const nchip = $("#notifChip");
-  const canPush = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
-  nchip.style.display = "";
-  if (!canPush) {
-    nchip.textContent = "🔔 此浏览器不支持通知";
-    nchip.classList.remove("logged");
-    return;
-  }
-  const subscribed = localStorage.getItem("shudong_notif") === "on" && Notification.permission === "granted";
-  nchip.textContent = subscribed ? "🔔 通知已开启" : "🔔 开启通知";
-  nchip.classList.toggle("logged", subscribed);
+  /* 通知统一走微信：微信绑定按钮对所有人常显 */
+  $("#wxChip").style.display = "";
 }
 window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferredInstall = e; refreshChips(); });
 window.addEventListener("appinstalled", () => { deferredInstall = null; toast("装好啦！桌面见 🌙"); refreshChips(); });
@@ -1086,49 +1076,6 @@ $("#installChip").addEventListener("click", async () => {
     toast("在浏览器菜单里找「添加到主屏幕」或「添加至桌面」；找不到说明此浏览器不支持，请用 Chrome/Safari 打开 🍃");
   }
 });
-
-async function subscribePush() {
-  const perm = await Notification.requestPermission();
-  if (perm !== "granted") { toast("通知权限没有通过哦，浏览器设置里可以重新允许"); return false; }
-  const reg = await navigator.serviceWorker.ready;
-  /* base64url → Uint8Array */
-  const pubStr = window.__vapidPub.replace(/-/g, "+").replace(/_/g, "/");
-  const rawKey = Uint8Array.from(atob(pubStr + "===".slice((pubStr.length + 3) % 4)), (c) => c.charCodeAt(0));
-  let sub;
-  try {
-    sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: rawKey,
-    });
-  } catch (e) {
-    if (isIOS() && !isStandalone()) { toast("iPhone 需要先添加到主屏幕，再开通知哦 📲"); refreshChips(); }
-    else toast("订阅推送失败了，稍后再试 🍃");
-    return false;
-  }
-  const j = sub.toJSON();
-  const a = getAuth();
-  const res = await fetch(API_BASE + "/push/subscribe", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...(a && (await ensureToken()) ? { Authorization: "Bearer " + getAuth().access_token } : {}) },
-    body: JSON.stringify({ endpoint: j.endpoint, keys: j.keys }),
-  }).catch(() => null);
-  if (!res || !(await res.json()).ok) { toast("开启失败，稍后再试 🍃"); return false; }
-  localStorage.setItem("shudong_notif", "on");
-  toast("通知开启啦！有人回应你的心事，手机会提醒你 🔔");
-  refreshChips();
-  return true;
-}
-$("#notifChip").addEventListener("click", async () => {
-  const canPush = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
-  if (!canPush) { toast("当前浏览器不支持网页通知，请用 Safari 或 Chrome 打开本站 🍃"); return; }
-  if (Notification.permission === "denied") { toast("通知权限被拒绝过，请在浏览器设置里为本站重新允许 🔔"); return; }
-  if (Notification.permission === "granted" && localStorage.getItem("shudong_notif") === "on") {
-    toast("通知已经开着啦 🔔");
-    return;
-  }
-  if (isIOS() && !isStandalone()) { refreshChips(); toast("iPhone 请先按引导添加到主屏幕 📲"); return; }
-  await subscribePush();
-  });
 }
 
 /* ---------- PWA Service Worker 注册 ---------- */
