@@ -566,6 +566,7 @@
     <div style="display:flex; gap:8px; justify-content:center; margin-top:8px; flex-wrap:wrap;">
       <button class="account-chip" id="installChip" style="display:none">📲 安装到主屏幕</button>
       <button class="account-chip" id="notifChip" style="display:none">🔔 开启通知</button>
+      <button class="account-chip" id="wxChip" style="display:none">💬 微信通知绑定</button>
     </div>
     <div id="iosGuide" class="care" style="display:none; margin-top:10px">
       <b>添加到主屏幕（iPhone）：</b>点 Safari 底部的<b>分享按钮 □↑</b> → 选“添加到主屏幕”→ 右上角“添加”。
@@ -635,6 +636,20 @@
   </section>
 
   <footer>树洞 · 愿你被这个世界温柔以待 <span style="opacity:0.45;font-size:10px">v5.1</span></footer>
+</div>
+
+<!-- 微信绑定弹窗 -->
+<div class="auth-mask" id="wxMask" style="display:none">
+  <div class="auth-card" style="text-align:center">
+    <button class="auth-close" id="wxClose">✕</button>
+    <h3>💬 微信通知绑定</h3>
+    <p class="auth-tip">用微信扫下面的二维码，关注后即可绑定。<br>之后有人回应你的心事，<b>微信会直接弹消息</b>。</p>
+    <div id="wxQrBox" style="min-height:180px; display:flex; align-items:center; justify-content:center;">
+      <span style="color:#a6907f">正在生成二维码……</span>
+    </div>
+    <p class="auth-err" id="wxErr"></p>
+    <div class="auth-actions"><button class="btn btn-ghost" id="wxRefresh">刷新二维码</button></div>
+  </div>
 </div>
 
 <!-- 账号弹窗 -->
@@ -987,6 +1002,23 @@ $("#btnLogout").addEventListener("click", async () => {
   toast("下次再来，我一直在这儿 🌿");
   await afterAuthChange();
 });
+}
+
+/* 微信通知绑定（登录用户）——事件接线在 initAuthUI 中 */
+async function openWxBind() {
+  if (!authState.user) { toast("先登录再绑定微信通知哦 🌿"); openAuth(); return; }
+  $("#wxMask").style.display = "flex";
+  $("#wxErr").textContent = "";
+  $("#wxQrBox").innerHTML = "<span style='color:#a6907f'>正在生成二维码……</span>";
+  try {
+    const res = await authedApi("/push/wx/qr", { method: "GET" });
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error || "生成失败");
+    $("#wxQrBox").innerHTML = `<img src="${j.qrUrl}" alt="微信扫码绑定" style="width:210px;height:210px;border-radius:12px;border:2px solid #ffe0cd">`;
+  } catch (e) {
+    $("#wxQrBox").innerHTML = "";
+    $("#wxErr").textContent = e.message.includes("未配置") ? "微信通知还在配置中，稍后再来～" : ("生成二维码失败：" + e.message);
+  }
 }
 
 /* ---------- 安装到主屏幕 + 通知推送 ---------- */
@@ -1907,6 +1939,10 @@ setInterval(() => {
 try {
   initAuthUI();
   initInstallNotifUI();
+  /* 微信绑定弹窗接线 */
+  $("#wxChip").addEventListener("click", openWxBind);
+  $("#wxClose").addEventListener("click", () => $("#wxMask").style.display = "none");
+  $("#wxRefresh").addEventListener("click", openWxBind);
   refreshChips();
   updateBadge();
   renderMine();
