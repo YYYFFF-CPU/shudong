@@ -1078,7 +1078,6 @@ $("#notifChip").addEventListener("click", async () => {
   await subscribePush();
   });
 }
-initInstallNotifUI();
 
 /* ---------- PWA Service Worker 注册 ---------- */
 if ("serviceWorker" in navigator) {
@@ -1904,18 +1903,22 @@ setInterval(() => {
   fetchShared().then((rows) => { if (rows) { lastRows = rows; updateNotifBadge(); } });
 }, 120000);
 
-/* ---------- 启动 ---------- */
-initAuthUI();
-refreshChips();
-updateBadge();
-renderMine();
-renderChat();
-updateQuota();
-afterAuthChange();
-startIdleCycle();
-tickIdle();
-/* 启动即拉一次心事，点亮通知角标 */
-if (isShared()) fetchShared().then((rows) => { if (rows) { lastRows = rows; updateNotifBadge(); } });
+/* ---------- 启动（防崩保护：任何一步失败不影响其余步骤和页面渲染） ---------- */
+try {
+  initAuthUI();
+  initInstallNotifUI();
+  refreshChips();
+  updateBadge();
+  renderMine();
+  renderChat();
+  updateQuota();
+  afterAuthChange();
+  startIdleCycle();
+  tickIdle();
+} catch (e) { console.error("启动异常:", e); }
+try {
+  if (isShared()) fetchShared().then((rows) => { if (rows) { lastRows = rows; updateNotifBadge(); } });
+} catch (e) { console.error("数据加载异常:", e); }
 </script>
 </body>
 </html>
