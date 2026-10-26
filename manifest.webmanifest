@@ -1,0 +1,16 @@
+{
+  "name": "树洞 · 一个暖暖的小树洞",
+  "short_name": "树洞",
+  "description": "匿名倾诉，AI 陪伴，收下每一句温柔的回应。",
+  "start_url": "./index.html?src=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fff7ea",
+  "theme_color": "#ffeeda",
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
