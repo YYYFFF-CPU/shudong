@@ -641,7 +641,7 @@
     <div id="adminList"></div>
   </section>
 
-  <footer>树洞 · 愿你被这个世界温柔以待 <span style="opacity:0.45;font-size:10px">v5.2</span></footer>
+  <footer>树洞 · 愿你被这个世界温柔以待 <span style="opacity:0.45;font-size:10px">v5.3</span></footer>
 </div>
 
 <!-- 微信绑定弹窗 -->
@@ -1754,7 +1754,7 @@ async function renderOthers() {
   const isMine = (id) => !!own[id] || authState.myIds.includes(id);
   list.innerHTML = others.map((e) => {
     const r = react[e.id] || {};
-    const who = e.author ? "🌿 " + e.author : "🕶 匿名旅人";
+    const who = e.author ? "🌿 " + esc(e.author) : "🕶 匿名旅人";
     return `
     <div class="note" data-note="${e.id}">
       <div class="note-text">${esc(e.text)}</div>
@@ -1966,7 +1966,7 @@ async function renderAdmin() {
   box.innerHTML = others.map((e) => `
     <div class="note">
       <div class="note-text">${esc(e.text)}</div>
-      ${e.replies.map((t) => `<div class="user-replies"><div class="adm-reply-row"><span>💬 ${t.text}</span><button class="adm-del" data-ar="${t.id}">删 ✕</button></div></div>`).join("")}
+      ${e.replies.map((t) => `<div class="user-replies"><div class="adm-reply-row"><span>💬 ${esc(t.text)}</span><button class="adm-del" data-ar="${t.id}">删 ✕</button></div></div>`).join("")}
       <div class="note-meta">
         <span>${e.author ? "🌿 " + esc(e.author) : "🕶 匿名"} · ${esc(e.time)} · 🤗${e.hugs} ☀️${e.lamps}</span>
         <button class="adm-del" data-aw="${e.id}">删除心事 ✕</button>
