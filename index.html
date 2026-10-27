@@ -568,8 +568,15 @@
       <button class="account-chip" id="wxChip" style="display:none">💬 微信通知绑定</button>
     </div>
     <div id="iosGuide" class="care" style="display:none; margin-top:10px">
-      <b>添加到主屏幕（iPhone）：</b>点 Safari 底部的<b>分享按钮 □↑</b> → 选“添加到主屏幕”→ 右上角“添加”。
-      装好后打开树洞，再点下面的「💬 微信通知绑定」按钮绑定微信通知哦。
+      <b>添加到主屏幕（iPhone）：</b>用 <b>Safari</b> 打开本站 → 点底部的<b>分享按钮 □↑</b> → 选“添加到主屏幕”→ 右上角“添加”。
+      装好后是独立全屏 App，再点「💬 微信通知绑定」开启通知哦。
+    </div>
+    <div id="installGuide" class="care" style="display:none; margin-top:10px">
+      <b>想要 App 一样的图标？（安卓）</b><br>
+      ① 用 <b>Chrome</b> 或 <b>Edge</b> 浏览器打开本站（国产浏览器大多不支持安装）<br>
+      ② 点右上角 <b>⋮</b> → 选“<b>安装应用</b>”或“添加到主屏幕”<br>
+      ③ 桌面出现树洞图标，点开就是全屏独立 App<br>
+      <span style="font-size:12px;color:#c4ab97">提示：小米/荣耀/vivo/OPPO 自带浏览器通常只能添加网页快捷方式，无法变成独立 App 哦。</span>
     </div>
   </header>
 
@@ -1052,20 +1059,21 @@ const isStandalone = () => window.matchMedia("(display-mode: standalone)").match
 let deferredInstall = null;
 
 function refreshChips() {
-  const chip = $("#installChip"), guide = $("#iosGuide");
+  const chip = $("#installChip");
   if (deferredInstall) {
-    chip.style.display = ""; chip.textContent = "📲 一键安装到主屏幕";
-    guide.style.display = "none";
+    chip.style.display = ""; chip.textContent = "📲 一键安装 App";
+    $("#iosGuide").style.display = "none";
+    $("#installGuide").style.display = "none";
   } else if (isIOS() && !isStandalone()) {
     chip.style.display = ""; chip.textContent = "📲 怎么装到主屏幕？";
-    guide.style.display = "block";
+    $("#iosGuide").style.display = "block";
+    $("#installGuide").style.display = "none";
   } else {
-    /* 不支持一键安装的浏览器（国产壳浏览器等）：常显按钮，点击给菜单指引 */
+    /* 不支持一键安装的浏览器（国产壳浏览器等）：常显按钮，点击给分平台指引 */
     chip.style.display = ""; chip.textContent = "📲 添加到主屏幕";
-    guide.style.display = "none";
+    $("#iosGuide").style.display = "none";
+    $("#installGuide").style.display = isIOS() ? "none" : "block";
   }
-  /* 通知统一走微信：微信绑定按钮对所有人常显 */
-  $("#wxChip").style.display = "";
 }
 window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferredInstall = e; refreshChips(); });
 window.addEventListener("appinstalled", () => { deferredInstall = null; toast("装好啦！桌面见 🌙"); refreshChips(); });
@@ -1079,7 +1087,9 @@ $("#installChip").addEventListener("click", async () => {
     $("#iosGuide").scrollIntoView({ behavior: "smooth", block: "center" });
     toast("按上面的三步就装好啦 🌷");
   } else {
-    toast("在浏览器菜单里找「添加到主屏幕」或「添加至桌面」；找不到说明此浏览器不支持，请用 Chrome/Safari 打开 🍃");
+    /* 不支持一键安装的浏览器：弹分平台安装指引 */
+    $("#installGuide").style.display = "block";
+    $("#installGuide").scrollIntoView({ behavior: "smooth", block: "center" });
   }
 });
 }
