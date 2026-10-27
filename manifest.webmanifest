@@ -1,10 +1,12 @@
 {
   "name": "树洞 · 一个暖暖的小树洞",
   "short_name": "树洞",
+  "id": "./index.html?src=pwa",
   "description": "匿名倾诉，AI 陪伴，收下每一句温柔的回应。",
   "start_url": "./index.html?src=pwa",
   "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
   "background_color": "#fff7ea",
   "theme_color": "#ffeeda",
