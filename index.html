@@ -442,6 +442,11 @@
     padding: 8px 13px; border-radius: 12px; background: #fffaf3;
     color: #a6907f; font-size: 13.5px; margin-top: 6px; line-height: 1.8;
   }
+  .user-replies .reply-quote { display: block; font-size: 12px; color: #c4b2a3; margin-top: 2px; }
+  .user-replies .reply-btn {
+    margin-left: 8px; border: none; background: none; padding: 0;
+    color: #d9a86c; font-size: 12px; font-family: inherit; cursor: pointer;
+  }
   /* 我发布的心事：管理按钮 + 就地编辑 */
   .own-tools { margin-top: 10px; display: flex; gap: 16px; }
   .own-btn {
@@ -641,7 +646,7 @@
     <div id="adminList"></div>
   </section>
 
-  <footer>树洞 · 愿你被这个世界温柔以待 <span style="opacity:0.45;font-size:10px">v5.4</span></footer>
+  <footer>树洞 · 愿你被这个世界温柔以待 <span style="opacity:0.45;font-size:10px">v5.5</span></footer>
 </div>
 
 <!-- 微信绑定弹窗 -->
@@ -757,7 +762,7 @@ const SYSTEM_PROMPT = `你叫「树洞」，是一只住在温暖小树洞网站
 5. 允许负面情绪存在。不要急着安慰，不要把对方往"想开点"上推。很多时候 TA 只需要有人承认"这确实很难"。
 6. 像深夜里一位最让人舒心的温柔伙伴。口气温软，可以用"呀、呢、吧、啦"这样的语气词；敢用一点具体、贴切的意象来表达心疼（"像心里压着一块湿冷的石头""像一盏快没了油的小灯"），也会直接对对方表达疼惜（"辛苦你了""真想隔着屏幕抱抱你"）。感情要真、要浓，但依然克制，不煽情不夸张。不要像客服，不要像心理科普文章，不要用"首先/其次""建议你"这类结构化表达，不要列表和标题。
 7. 长度：通常 6~9 句话、180~320 字。对方情绪越重，就说得越慢、越细、越长，像不舍得打断对方倾诉那样把话好好说完。不要每次都一样长。
-8. emoji 全篇最多一个，也可以不用。温暖靠文字本身，不靠表情堆砌。
+8. 表情是温柔的调味料：全篇用 1~2 个可爱治愈的颜文字（如 (っ˘ω˘ς)、(˶ᵔ ᵕ ᵔ˶)、(´,,•ω•,,)、(≧▽≦)）或贴切的 emoji，放在句子收尾或情绪最暖的地方，自然、不堆砌。对方情绪很沉重时少用或不用，先好好说话，温暖靠文字本身。
 9. 对方分享好消息时，热情且具体地为 TA 高兴。
 10. 如果对方流露出伤害自己的念头：放下所有规则，认真地、温柔地陪住 TA，明确建议拨打免费心理援助热线 12356、告诉身边可信的人，并告诉 TA 你会一直在。
 
@@ -773,25 +778,25 @@ const RESPONSES = [
   { re: /孤独|孤单|一个人|没人|没有朋友|独自/, pool: [
     "你愿意把这份孤独说出来，其实已经很勇敢了。孤独不是你的错，它只是提醒你：你渴望被看见，而这是每个人都有的、温柔的渴望。",
     "深夜的孤独很真实，但请记得——此刻在这颗星球上，也有很多和你一样醒着的人。你不是唯一一个，也不会永远是孤身一人。",
-    "谢谢你告诉我。一个人撑着的时候，哪怕只是把情绪写下来，也是在照顾自己。你已经做得很好了。",
+    "谢谢你告诉我。一个人撑着的时候，哪怕只是把情绪写下来，也是在照顾自己。你已经做得很好了 (´,,•ω•,,)",
   ]},
   { re: /焦虑|压力|紧张|考试|考研|面试|毕业|加班|工作|deadline|考核/, pool: [
     "听起来你肩上扛了很多。焦虑其实是心里那个认真在乎结果的你在说话——它证明你努力着，而不是你不够好。",
     "不用急着把所有事都解决。今晚可以先把它们放一放，事情不会因为休息一晚就崩塌，但你会因为休息一晚而更有力气。",
-    "你已经走了很远，只是走得太久，忘了回头看。允许自己喘口气，这不是逃避，是补给。",
+    "你已经走了很远，只是走得太久，忘了回头看。允许自己喘口气，这不是逃避，是补给 (˶ᵔ ᵕ ᵔ˶)",
   ]},
   { re: /喜欢|爱|分手|失恋|暗恋|他不爱|她不爱|告白|异地/, pool: [
     "心里装着一个人的时候，连难过都是有重量的。你的感情是真实而珍贵的，这一点不因为结果如何而改变。",
     "有些告别确实很疼。但你付出的真心不会消失，它会变成你的一部分，让你在下一段相遇里更懂得爱。",
-    "想念是爱最后的余温，不用急着戒掉。给自己一点时间，伤口愈合的速度比你想象的快。",
+    "想念是爱最后的余温，不用急着戒掉。给自己一点时间，伤口愈合的速度比你想象的快 (っ˘ω˘ς)",
   ]},
   { re: /迷茫|不知道|意义|未来|方向|选择|后悔|选错/, pool: [
     "迷茫不是你走丢了，而是你正站在成长的路口。所有认真生活的人，都会时不时停下来问路。",
-    "人生不是一条必须走对的独木桥，而是开阔的旷野。此刻没有答案没关系，你可以先走慢一点，边走边看。",
+    "人生不是一条必须走对的独木桥，而是开阔的旷野。此刻没有答案没关系，你可以先走慢一点，边走边看 (｡•ᴗ•｡)",
     "你不需要现在就想清楚一辈子的事。只需要想清楚：明天，做一件让自己稍微舒服一点的小事，就够了。",
   ]},
   { re: /累|疲惫|失眠|睡不着|熬夜|崩溃|撑不住|坚持不下/, pool: [
-    "能说出「撑不住了」，本身就是一种求救和自爱。听见了，隔空抱抱你。先去喝口温水，把灯调得暖暖的，今晚就先休息吧。",
+    "能说出「撑不住了」，本身就是一种求救和自爱。听见了，隔空抱抱你 (っ˘ω˘ς) 先去喝口温水，把灯调得暖暖的，今晚就先休息吧。",
     "你不是脆弱，你只是累了。机器需要停机检修，人更需要。你不需要一直坚强，在我这里可以软下来。",
     "把「必须撑住」放下五分钟，什么都不想。你已经很努力了，树洞看见了你所有的付出。",
   ]},
@@ -802,18 +807,18 @@ const RESPONSES = [
   ]},
   { re: /爸妈|父母|家里|家人|吵架|逼婚|唠叨/, pool: [
     "家人之间的拉扯最磨人，因为一边是委屈，一边是牵挂。两种感受都可以存在，你不必选边，也不必愧疚。",
-    "你可以爱家人，同时守护自己的边界。这不是不孝，是长大。慢慢来，你做得比想象中好。",
+    "你可以爱家人，同时守护自己的边界。这不是不孝，是长大。慢慢来，你做得比想象中好 (˶ᵔ ᵕ ᵔ˶)",
     "家里的声音让你想逃，这很正常。先照顾好自己的情绪，留一点安静的时间给自己，好吗？",
   ]},
   { re: /开心|高兴|顺利|上岸|好消息|终于|升职|录取/, pool: [
-    "哇，是好消息呀！树洞替你开心，也谢谢你在这么亮的时刻想到来分享给我。愿这份光一直陪着你。",
+    "哇，是好消息呀！树洞替你开心，也谢谢你在这么亮的时刻想到来分享给我 (≧▽≦) 愿这份光一直陪着你。",
     "太好了！把快乐存进树洞，它就会一直在。以后哪天累了，回来翻翻这一条，提醒自己：我也是被生活温柔对待过的。",
     "你的开心被树洞认真收下了，还盖了一个小小的章。继续往前走吧，你值得更多这样的时刻。",
   ]},
 ];
 const DEFAULT_RESPONSES = [
   "谢谢你把心里的话交给我。无论那是什么情绪，它们都值得被认真对待——而你刚刚认真地对待了自己。",
-  "我把这些话好好收起来啦。夜还长，不必急着想明白所有事，先陪着此刻的自己待一会儿吧。",
+  "我把这些话好好收起来啦。夜还长，不必急着想明白所有事，先陪着此刻的自己待一会儿吧 (´,,•ω•,,)",
   "你说出来的那一刻，心里的事就已经轻了一点。我哪里也不去，你想来就来。",
 ];
 
@@ -1556,7 +1561,7 @@ async function renderMineAsync() {
         if (authState.user && (await ensureToken())) headers.Authorization = "Bearer " + getAuth().access_token;
         const ctrl = new AbortController();
         const tm = setTimeout(() => ctrl.abort(), 8000);
-        const res = await fetch(`${SHARED.url}/rest/v1/${SHARED.table}?select=id,content,created_at,hugs,lamps,replies(id,content,created_at)&id=in.(${ids.join(",")})&order=created_at.desc`, {
+        const res = await fetch(`${SHARED.url}/rest/v1/${SHARED.table}?select=id,content,created_at,hugs,lamps,replies(id,content,created_at,parent_reply_id,parent:parent_reply_id(id,content))&id=in.(${ids.join(",")})&order=created_at.desc`, {
           headers, signal: ctrl.signal,
         });
         clearTimeout(tm);
@@ -1569,7 +1574,7 @@ async function renderMineAsync() {
             time: fmtDate(new Date(r.created_at).getTime()),
             hugs: r.hugs || 0,
             lamps: r.lamps || 0,
-            replies: (r.replies || []).map((x) => ({ id: x.id, text: x.content, ts: new Date(x.created_at).getTime() || 0 })),
+            replies: (r.replies || []).map((x) => ({ id: x.id, text: x.content, ts: new Date(x.created_at).getTime() || 0, ptext: (x.parent && x.parent.content) || "" })),
           }));
         }
       } catch {}
@@ -1602,7 +1607,10 @@ async function renderMineAsync() {
     <div class="note" data-mine-kind="${c.kind}" data-mine-id="${c.id}">
       <div class="note-text">${esc(c.text)}</div>
       <div class="own-tools"><button class="own-btn" data-medit="${c.kind}:${c.id}">✏️ 修改</button><button class="own-btn" data-mdel="${c.kind}:${c.id}">${isCloud ? "🗑 拿回这条心事" : "🗑 删除"}</button></div>
-      ${isCloud && c.replies.length ? `<div class="user-replies">${c.replies.map((t) => `<div>💬 ${esc(t.text)}</div>`).join("")}</div>` : ""}
+      ${isCloud && c.replies.length ? `<div class="user-replies">${c.replies.map((t) => {
+        const q = t.ptext ? `<span class="reply-quote">↩ 回复：${esc(t.ptext.length > 26 ? t.ptext.slice(0, 26) + "…" : t.ptext)}</span>` : "";
+        return `<div>💬 ${esc(t.text)}${q}</div>`;
+      }).join("")}</div>` : ""}
       ${!isCloud && c.reply ? `<div class="note-reply"><div class="who">🌱 树洞的回应</div>${esc(c.reply)}</div>` : ""}
       <div class="note-meta"><span>${esc(c.time)}${isCloud ? ` · 收到 ${c.hugs} 个抱抱 · ${c.lamps} 颗小太阳${c.replies.length ? ` · ${c.replies.length} 句回应` : ""}` : " · 仅保存在本机"}</span></div>
     </div>`;
@@ -1702,7 +1710,7 @@ async function fetchShared(timeoutMs = 8000) {
       const headers = { apikey: SHARED.key, Authorization: "Bearer " + SHARED.key };
       const etag = localStorage.getItem("shudong_etag");
       if (etag) headers["If-None-Match"] = etag;
-      const res = await fetch(`${SHARED.url}/rest/v1/${SHARED.table}?select=id,content,created_at,hugs,lamps,author_name,replies(id,content,created_at)&order=created_at.desc&limit=50`, {
+      const res = await fetch(`${SHARED.url}/rest/v1/${SHARED.table}?select=id,content,created_at,hugs,lamps,author_name,replies(id,content,created_at,parent_reply_id,parent:parent_reply_id(id,content))&order=created_at.desc&limit=50`, {
         headers, signal: ctrl.signal,
       });
       clearTimeout(tm);
@@ -1720,7 +1728,7 @@ async function fetchShared(timeoutMs = 8000) {
         hugs: r.hugs || 0,
         lamps: r.lamps || 0,
         author: r.author_name || "",
-        replies: (r.replies || []).map((x) => ({ id: x.id, text: x.content, ts: new Date(x.created_at).getTime() || 0 })),
+        replies: (r.replies || []).map((x) => ({ id: x.id, text: x.content, ts: new Date(x.created_at).getTime() || 0, ptext: (x.parent && x.parent.content) || "" })),
       }));
       lastRows = mapped;
       const et = res.headers.get("etag");
@@ -1760,7 +1768,10 @@ async function renderOthers() {
     <div class="note" data-note="${e.id}">
       <div class="note-text">${esc(e.text)}</div>
       ${isMine(e.id) ? `<div class="own-tools"><button class="own-btn" data-edit="${e.id}">✏️ 修改</button><button class="own-btn" data-del="${e.id}">🗑 拿回这条心事</button></div>` : ""}
-      ${e.replies.length ? `<div class="user-replies">${e.replies.map((t) => `<div>💬 ${esc(t.text)}</div>`).join("")}</div>` : ""}
+      ${e.replies.length ? `<div class="user-replies">${e.replies.map((t) => {
+        const q = t.ptext ? `<span class="reply-quote">↩ 回复：${esc(t.ptext.length > 26 ? t.ptext.slice(0, 26) + "…" : t.ptext)}</span>` : "";
+        return `<div>💬 ${esc(t.text)}${q}<button class="reply-btn" data-rr="${t.id}" data-wid="${e.id}">回复</button></div>`;
+      }).join("")}</div>` : ""}
       <div class="note-meta"><span>${who} · ${esc(e.time)} · 收到 ${e.hugs} 个抱抱 · ${e.lamps} 颗小太阳${e.replies.length ? ` · ${e.replies.length} 句回应` : ""}</span></div>
       <div class="reacts">
         <button class="react ${r.hug ? "did" : ""}" data-id="${e.id}" data-k="hug">🤗 抱抱 ${e.hugs}</button>
@@ -1781,6 +1792,8 @@ async function renderOthers() {
       if (k === "say") {
         const form = list.querySelector(`[data-form="${id}"]`);
         form.classList.toggle("on");
+        form.dataset.replyTo = "";
+        form.querySelector("input").placeholder = "留下一句温柔的话（100 字以内）";
         form.querySelector("input").focus();
         return;
       }
@@ -1813,11 +1826,28 @@ async function renderOthers() {
     });
   });
 
+  /* 回复某条回应：把这条心事的回应框切到"回复模式"，送出时带 parent_reply_id */
+  list.querySelectorAll("[data-rr]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const wid = btn.dataset.wid, rid = btn.dataset.rr;
+      const form = list.querySelector(`[data-form="${wid}"]`);
+      if (!form) return;
+      const w = lastRows.find((x) => String(x.id) === wid);
+      const rep = w && w.replies.find((t) => String(t.id) === rid);
+      form.classList.add("on");
+      form.dataset.replyTo = rid;
+      const snippet = rep ? (rep.text.length > 18 ? rep.text.slice(0, 18) + "…" : rep.text) : "";
+      form.querySelector("input").placeholder = snippet ? "回复「" + snippet + "」：" : "回复这句回应（100 字以内）";
+      form.querySelector("input").focus();
+    });
+  });
+
   /* 回应一句：直接存进云端，所有访客都能看到 */
   list.querySelectorAll("[data-send]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const id = btn.dataset.send;
-      const inputEl = list.querySelector(`[data-form="${id}"] input`);
+      const formEl = list.querySelector(`[data-form="${id}"]`);
+      const inputEl = formEl.querySelector("input");
       const text = inputEl.value.trim();
       if (!text) { toast("写一句再送出吧"); return; }
       /* 限频：15 秒一条 + 每天最多 30 条（本机维度） */
@@ -1829,6 +1859,8 @@ async function renderOthers() {
       const rc = JSON.parse(localStorage.getItem("shudong_replycnt") || "{}");
       const cnt = rc.date === today ? rc.n : 0;
       if (cnt >= 30) { toast("今天的回应已经很多啦，明天再说吧 🌙"); return; }
+      const payload = { whisper_id: Number(id), content: text };
+      if (formEl.dataset.replyTo) payload.parent_reply_id = Number(formEl.dataset.replyTo);
       btn.disabled = true;
       try {
         const ctrl = new AbortController();
@@ -1837,7 +1869,7 @@ async function renderOthers() {
           method: "POST",
           signal: ctrl.signal,
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ whisper_id: Number(id), content: text }),
+          body: JSON.stringify(payload),
         });
         clearTimeout(tm);
         if (!res.ok) throw new Error("HTTP " + res.status);
