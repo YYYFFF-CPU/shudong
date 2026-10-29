@@ -641,7 +641,7 @@
     <div id="adminList"></div>
   </section>
 
-  <footer>树洞 · 愿你被这个世界温柔以待 <span style="opacity:0.45;font-size:10px">v5.3</span></footer>
+  <footer>树洞 · 愿你被这个世界温柔以待 <span style="opacity:0.45;font-size:10px">v5.4</span></footer>
 </div>
 
 <!-- 微信绑定弹窗 -->
@@ -1476,7 +1476,7 @@ $("#keep").addEventListener("click", async () => {
   const secret = genSecret();
   /* 匿名开关：勾选=纯匿名（与账号无关）；不勾=带上昵称和账号身份（可跨设备管理） */
   const wantName = authState.user && !$("#anonPost").checked;
-  let cloudOk = false;
+  let cloudOk = false, cloudId = null;
   if (isShared()) {
     try {
       let headers = { "Content-Type": "application/json", apikey: SHARED.key, Authorization: "Bearer " + SHARED.key, Prefer: "return=representation" };
@@ -1505,6 +1505,7 @@ $("#keep").addEventListener("click", async () => {
       if (!res.ok) throw new Error("HTTP " + res.status);
       const data = await res.json();
       if (data && data[0] && data[0].id) {
+        cloudId = data[0].id;
         const own = getOwn();
         own[data[0].id] = secret;
         saveOwn(own);
