@@ -646,7 +646,7 @@
     <div id="adminList"></div>
   </section>
 
-  <footer>树洞 · 愿你被这个世界温柔以待 <span style="opacity:0.45;font-size:10px">v5.5</span></footer>
+  <footer>树洞 · 愿你被这个世界温柔以待 <span style="opacity:0.45;font-size:10px">v5.6</span></footer>
 </div>
 
 <!-- 微信绑定弹窗 -->
@@ -1708,7 +1708,7 @@ async function fetchShared(timeoutMs = 8000) {
     try {
       /* 内嵌 replies：一次请求拿到心事 + 全部云端回应 + 真实计数 + 作者昵称 */
       const headers = { apikey: SHARED.key, Authorization: "Bearer " + SHARED.key };
-      const etag = localStorage.getItem("shudong_etag");
+      const etag = localStorage.getItem("shudong_etag_v2");
       if (etag) headers["If-None-Match"] = etag;
       const res = await fetch(`${SHARED.url}/rest/v1/${SHARED.table}?select=id,content,created_at,hugs,lamps,author_name,replies(id,content,created_at,parent_reply_id,parent:parent_reply_id(id,content))&order=created_at.desc&limit=50`, {
         headers, signal: ctrl.signal,
@@ -1716,7 +1716,7 @@ async function fetchShared(timeoutMs = 8000) {
       clearTimeout(tm);
       if (res.status === 304) {
         /* 数据没变：直接用缓存，零流量 */
-        lastRows = JSON.parse(localStorage.getItem("shudong_rows") || "[]");
+        lastRows = JSON.parse(localStorage.getItem("shudong_rows_v2") || "[]");
         return lastRows;
       }
       if (!res.ok) throw new Error("HTTP " + res.status);
@@ -1733,8 +1733,8 @@ async function fetchShared(timeoutMs = 8000) {
       lastRows = mapped;
       const et = res.headers.get("etag");
       if (et) {
-        localStorage.setItem("shudong_etag", et);
-        localStorage.setItem("shudong_rows", JSON.stringify(mapped));
+        localStorage.setItem("shudong_etag_v2", et);
+        localStorage.setItem("shudong_rows_v2", JSON.stringify(mapped));
       }
       return mapped;
     } finally { clearTimeout(tm); }
@@ -1872,6 +1872,7 @@ async function renderOthers() {
           body: JSON.stringify(payload),
         });
         clearTimeout(tm);
+        if (res.status === 429) { toast("这条心事刚收到好多回应，稍等一会儿再送 🍃"); btn.disabled = false; return; }
         if (!res.ok) throw new Error("HTTP " + res.status);
         localStorage.setItem("shudong_last_reply", String(now));
         localStorage.setItem("shudong_replycnt", JSON.stringify({ date: today, n: cnt + 1 }));
