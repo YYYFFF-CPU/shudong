@@ -1,5 +1,5 @@
 /* 树洞 Service Worker：静态缓存 + 离线兜底 + 推送监听（基础设施已就位） */
-const CACHE = "shudong-v4";
+const CACHE = "shudong-v5.6";
 const ASSETS = [
   "./", "./index.html", "./v2.html",
   "./manifest.webmanifest",
